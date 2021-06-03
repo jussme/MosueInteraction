@@ -1,8 +1,8 @@
-package controlling.client;
+package base.server;
 
 import javax.swing.JFrame;
 
-public class ClientWindow extends JFrame{
+public class ServerWindow extends JFrame{
 	private static final long serialVersionUID = 1L;
 
 }

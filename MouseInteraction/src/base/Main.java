@@ -2,29 +2,42 @@ package base;
 
 import javax.swing.JOptionPane;
 
-import controlling.client.ControllingClient;
-import passive.client.PassiveClient;
-import server.ServerApp;
+import base.client.controlling.ControllingClient;
+import base.client.passive.PassiveClient;
+import base.server.ServerApp;
 
 public class Main {
 	private static final String VALID_IP_ADDRESS_REGEX = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$";
-
 	private static final String VALID_HOSTNAME_REGEX = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]).)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9])$";
-	
+	private static final String VALID_PORT_NUMBER_REGEX = "^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$";
 	
 	public static void main(String[] args) {
-		if(args.length != 3 && args.length != 1 && args.length != 0) {
+		if(args.length != 1 && args.length != 0) {
 			notifyOfFormatError();
 		}else {
 			try {
 				if(args.length == 1)
-					launchServer(Integer.parseInt(args[0]));
+					new ServerApp(Integer.parseInt(args[0]));
 				else
-					if(args.length == 3)
-						launchClient(args[0], Integer.parseInt(args[1]), Integer.parseInt(args[2]));
-					else
-						if(args.length == 0)
-							chooseMode();
+					if(args.length == 0) {
+						switch(chooseMode()) {
+							case PassiveClient:
+								new PassiveClient(
+										getHostnameInput(),
+										getPortNumberInput(),
+										getPasswordInput());
+								break;
+							case ControllingClient:
+								new ControllingClient(
+										getHostnameInput(),
+										getPortNumberInput(),
+										getPasswordInput());
+								break;
+							case Server:
+								new ServerApp(getPortNumberInput());
+								break;
+						}
+					}
 			}catch(NumberFormatException e) {
 				notifyOfFormatError();
 				e.printStackTrace();
@@ -33,59 +46,54 @@ public class Main {
 		}
 	}
 	
-	
-	
-	private static void launchServer(int localPortNumber) {
-		new ServerApp(localPortNumber);
-	}
-	
-	private static void launchClient(String hostname, int remotePortNumber, int clientMode) {
-		if(clientMode == 1)
-			new ControllingClient(hostname, remotePortNumber);
-		else
-			new PassiveClient(hostname, remotePortNumber);
-	}
-	
 	enum Mode{
 		PassiveClient,
 		ControllingClient,
 		Server;
 	}
-	private static void chooseMode() {
-		String hostname = "";
-		int portNumber = -1;
-		
-		var choosenClientMode = (Mode)JOptionPane.showInputDialog(null,
+	private static Mode chooseMode() {
+		return (Mode)JOptionPane.showInputDialog(null,
 				"Choose operation mode",
 				"Mode options",
 				JOptionPane.QUESTION_MESSAGE,
 				null,
 				Mode.values(),
 				Mode.values()[0]);
-		
+	}
+	
+	private static int getPortNumberInput() {
 		try{
-			portNumber = Integer.parseInt(JOptionPane.showInputDialog(null, "Server port:", "28010"));
+			String portNumberStr = JOptionPane.showInputDialog(null, "Server port:", "28010");
+			if(!portNumberStr.matches(VALID_PORT_NUMBER_REGEX))
+				throw new NumberFormatException("Invalid port number format");
+			return Integer.parseInt(portNumberStr);
 		}catch(NumberFormatException e) {
 			notifyOfFormatError();
-			e.printStackTrace();
+			System.exit(1);
+			return 0;
+		}
+		
+	}
+	
+	private static String getHostnameInput() {
+		String hostname = JOptionPane.showInputDialog(null, "Server hostname or IP: ");
+		if(!hostname.matches(VALID_HOSTNAME_REGEX) && !hostname.matches(VALID_IP_ADDRESS_REGEX)) {
+			notifyOfFormatError();
 			System.exit(1);
 		}
-		if(choosenClientMode == Mode.ControllingClient || choosenClientMode == Mode.PassiveClient) {
-			hostname = JOptionPane.showInputDialog(null, "Server hostname or IP:");
-			if(!hostname.matches(VALID_HOSTNAME_REGEX) && !hostname.matches(VALID_IP_ADDRESS_REGEX)) {
-				notifyOfFormatError();
-				System.exit(1);
-			}
-			if(choosenClientMode == Mode.ControllingClient)
-				new ControllingClient(hostname, portNumber);
-			else
-				new PassiveClient(hostname, portNumber);
-		}else {
-			new ServerApp(portNumber);
+		return hostname;
+	}
+	
+	private static String getPasswordInput() {
+		String password = JOptionPane.showInputDialog(null, "Password: ");
+		if(!password.trim().isEmpty()) {
+			notifyOfFormatError();
+			System.exit(1);
 		}
+		return password;
 	}
 	
 	private static void notifyOfFormatError() {
-		JOptionPane.showMessageDialog(null, "Format error", "Error", JOptionPane.ERROR_MESSAGE);
+		JOptionPane.showMessageDialog(null, "Input format error", "Error", JOptionPane.ERROR_MESSAGE);
 	}
 }
