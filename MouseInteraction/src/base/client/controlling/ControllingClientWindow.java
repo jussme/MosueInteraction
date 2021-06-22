@@ -15,6 +15,7 @@ public class ControllingClientWindow extends JFrame{
 	private final DrawPane drawPane;
 	
 	private class DrawPane extends JPanel{
+		private static final long serialVersionUID = 1L;
 		BufferedImage currentFrame;
 		DrawPane(){
 			ControllingClientWindow.this.add(this);

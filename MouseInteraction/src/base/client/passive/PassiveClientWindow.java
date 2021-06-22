@@ -5,7 +5,8 @@ import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
 
 public class PassiveClientWindow extends JFrame{
-	
+	private static final long serialVersionUID = 1L;
+
 	PassiveClientWindow(){
 		setSize(1600, 900);
 		

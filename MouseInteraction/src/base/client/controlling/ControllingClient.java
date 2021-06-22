@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -48,10 +49,12 @@ public class ControllingClient extends Client{
 			}
 			System.out.println(size + ", bytes:\n" + diag);
 			byte[] imageByteBuffer = new byte[size];
-			graphicsInputStream.read(imageByteBuffer);
+			graphicsInputStream.readNBytes(imageByteBuffer, 0, size);
 			
+			System.out.println("\n\n");
 			BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageByteBuffer));
 			System.out.println(img);
+			ImageIO.write(img, "jgp", new File(System.currentTimeMillis() + ".jpg"));
 			return img;
 			
 		}

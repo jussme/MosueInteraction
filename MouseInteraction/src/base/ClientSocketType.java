@@ -2,16 +2,21 @@ package base;
 
 public enum ClientSocketType{
 	GraphicsInputSocket(0),
-	GraphicsOutputSocket(1),
-	InputSocket(2),
-	OutputSocket(3),
-	MetaPassiveSocket(4),
-	MetaControllingSocket(5);
+	InputSocket(1),
+	MetaPassiveSocket(2),
+	MetaControllingSocket(3),
+	OutputSocket(4),
+	GraphicsOutputSocket(5);
 	
 	int intType;
+	static int nOfTypes = 6;
 	
 	public int getIntType() {
 		return this.intType;
+	}
+	
+	static public int getNOfTypes() {
+		return nOfTypes;
 	}
 	
 	public static ClientSocketType valueOf(int intType) throws NumberFormatException{

@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -54,9 +55,9 @@ public class PassiveClient extends Client{
 		}
 		
 		void sendScreenShot(BufferedImage screenShot) throws IOException{
-			
 			var byteArrayOutputStream = new ByteArrayOutputStream();
 			ImageIO.write(screenShot, "jpg", byteArrayOutputStream);
+			byteArrayOutputStream.flush();
 			outputStream.write(ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array());
 			//size sent
 			//for(var arrByte : byteArrayOutputStream.toByteArray())
@@ -110,12 +111,22 @@ public class PassiveClient extends Client{
 		}
 	}
 	
+	private class MetaCommunicator extends Thread {
+		
+		MetaCommunicator(Socket metaCommSocket){
+			
+		}
+	}
+	
 	public PassiveClient(String hostname, int remotePort, String password) {
 		launchClientSocketServicing(hostname, remotePort, password);
 	}
 	
 	private void launchClientSocketServicing(String hostname, int remotePort, String password) {
 		try {
+			Socket metaCommSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.MetaPassiveSocket);
+			new MetaCommunicator(metaCommSocket);
+			
 			Socket graphicsSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.GraphicsOutputSocket);
 			new MediaSender(graphicsSocket);
 			
