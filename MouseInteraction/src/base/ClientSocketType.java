@@ -4,7 +4,9 @@ public enum ClientSocketType{
 	GraphicsInputSocket(0),
 	GraphicsOutputSocket(1),
 	InputSocket(2),
-	OutputSocket(3);
+	OutputSocket(3),
+	MetaPassiveSocket(4),
+	MetaControllingSocket(5);
 	
 	int intType;
 	

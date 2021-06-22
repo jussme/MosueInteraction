@@ -6,10 +6,12 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 
 import javax.imageio.ImageIO;
 
@@ -17,14 +19,16 @@ import base.ClientSocketType;
 import base.client.Client;
 
 public class PassiveClient extends Client{
+	final PassiveClientWindow window = new PassiveClientWindow();
+	
 	private class MediaSender extends Thread{
-		OutputStream outputStream;
+		BufferedOutputStream outputStream;
 		Robot screenCapturer;
 		Rectangle screenRectangle;
 		
 		MediaSender(Socket graphicsSocket) {
 			try {
-				this.outputStream = graphicsSocket.getOutputStream();
+				this.outputStream = new BufferedOutputStream(graphicsSocket.getOutputStream());
 				this.screenCapturer = new Robot();
 				this.screenRectangle = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
 			}catch(IOException | HeadlessException | AWTException  e) {
@@ -38,25 +42,38 @@ public class PassiveClient extends Client{
 		
 		@Override
 		public void run() {
-			do {
-				try {
-					do {
-						sendScreenShot(getScreenShot());
-						Thread.sleep(SCREEN_REFRESH_DELAY);
-					}while(true);
-				}catch(IOException | InterruptedException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-			}while(true);
+			try {
+				do {
+					sendScreenShot(getScreenShot());
+					Thread.sleep(SCREEN_REFRESH_DELAY);
+				}while(true);
+			}catch(IOException | InterruptedException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
 		}
 		
 		void sendScreenShot(BufferedImage screenShot) throws IOException{
-			ImageIO.write(screenShot, "JPEG", outputStream);
+			
+			var byteArrayOutputStream = new ByteArrayOutputStream();
+			ImageIO.write(screenShot, "jpg", byteArrayOutputStream);
+			outputStream.write(ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array());
+			//size sent
+			//for(var arrByte : byteArrayOutputStream.toByteArray())
+			//	System.out.print(arrByte + ",");
+			String diag = "";
+			for(var bytee : ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array())
+				diag = diag + "," + bytee;
+			
+			System.out.println("size: " + byteArrayOutputStream.size() + ", bytes:\n" + diag);
+			outputStream.write(byteArrayOutputStream.toByteArray());
+			outputStream.flush();
+			//image sent
+			System.out.println("image sent");
 		}
 		
 		BufferedImage getScreenShot() {
-			return screenCapturer.createScreenCapture(screenRectangle);
+			return window.drawImage(screenCapturer.createScreenCapture(screenRectangle));
 		}
 	}
 	

@@ -86,7 +86,7 @@ public class Main {
 	
 	private static String getPasswordInput() {
 		String password = JOptionPane.showInputDialog(null, "Password: ");
-		if(!password.trim().isEmpty()) {
+		if(password.trim().isEmpty()) {
 			notifyOfFormatError();
 			System.exit(1);
 		}

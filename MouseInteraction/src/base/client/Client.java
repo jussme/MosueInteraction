@@ -14,7 +14,7 @@ public class Client {
 	public Socket logSocketOn(String hostname, int remotePort, String password, ClientSocketType clientSocketType) throws IOException{
 		var socket = new Socket(hostname, remotePort);
 		var bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-		bufferedWriter.write(password);
+		bufferedWriter.write(password + "\n");
 		bufferedWriter.flush();
 		bufferedWriter.write(clientSocketType.getIntType());
 		bufferedWriter.flush();

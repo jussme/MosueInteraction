@@ -2,10 +2,12 @@ package base.client.controlling;
 
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 
 import javax.imageio.ImageIO;
 
@@ -16,12 +18,20 @@ public class ControllingClient extends Client{
 	private final ControllingClientWindow controllingClientWindow;
 	private InputSender inputSender;
 	
+	private class MetaCommunicator extends Thread {
+		
+		MetaCommunicator(Socket metaCommSocket){
+			
+		}
+	}
+	
 	private class MediaReceiver extends Thread{
-		InputStream graphicsInputStream;
+		BufferedInputStream graphicsInputStream;
 		
 		MediaReceiver(Socket graphicsInputSocket){
 			try {
-				graphicsInputStream = graphicsInputSocket.getInputStream();
+				graphicsInputStream = new BufferedInputStream(graphicsInputSocket.getInputStream());
+				this.start();
 			}catch(IOException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -29,7 +39,21 @@ public class ControllingClient extends Client{
 		}
 		
 		BufferedImage receiveScreenShot() throws IOException{
-			return ImageIO.read(graphicsInputStream);
+			byte[] sizeArray = new byte[4];
+			graphicsInputStream.read(sizeArray);
+			int size = ByteBuffer.wrap(sizeArray).asIntBuffer().get();
+			String diag = "";
+			for(var bytee : ByteBuffer.wrap(sizeArray).array()) {
+				diag = diag + "," + bytee;
+			}
+			System.out.println(size + ", bytes:\n" + diag);
+			byte[] imageByteBuffer = new byte[size];
+			graphicsInputStream.read(imageByteBuffer);
+			
+			BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageByteBuffer));
+			System.out.println(img);
+			return img;
+			
 		}
 		
 		@Override
@@ -56,7 +80,7 @@ public class ControllingClient extends Client{
 		void receiveMouseEvent(MouseEvent e) {
 			try {
 				dataOutputStream.writeChar(e.getX());
-				dataOutputStream.writeChar(e.getY());		
+				dataOutputStream.writeChar(e.getY());
 			}catch(IOException ex) {
 				ex.printStackTrace();
 				System.exit(1);
@@ -65,12 +89,15 @@ public class ControllingClient extends Client{
 	}
 	
 	public ControllingClient(String hostname, int remotePort, String password) {
-		launchClientSocketServicing(hostname, remotePort, password);
 		controllingClientWindow = new ControllingClientWindow(this);
+		launchClientSocketServicing(hostname, remotePort, password);
 	}
 	
 	private void launchClientSocketServicing(String hostname, int remotePort, String password) {
 		try {
+			Socket metaCommSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.MetaControllingSocket);
+			new MetaCommunicator(metaCommSocket);
+			
 			Socket graphicsInputSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.GraphicsInputSocket);
 			new MediaReceiver(graphicsInputSocket);
 			
