@@ -8,8 +8,7 @@ import java.net.Socket;
 import base.ClientSocketType;
 
 public class Client {
-	public static final int SCREEN_REFRESH_DELAY = 16;
-	public static final int INPUT_DELAY = 16;
+	public static final int TOTAL_REFRESH_DELAY = 16;
 	
 	public Socket logSocketOn(String hostname, int remotePort, String password, ClientSocketType clientSocketType) throws IOException{
 		var socket = new Socket(hostname, remotePort);

@@ -9,7 +9,6 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -46,7 +45,7 @@ public class PassiveClient extends Client{
 			try {
 				do {
 					sendScreenShot(getScreenShot());
-					Thread.sleep(SCREEN_REFRESH_DELAY);
+					Thread.sleep(TOTAL_REFRESH_DELAY);
 				}while(true);
 			}catch(IOException | InterruptedException e) {
 				e.printStackTrace();
@@ -58,23 +57,15 @@ public class PassiveClient extends Client{
 			var byteArrayOutputStream = new ByteArrayOutputStream();
 			ImageIO.write(screenShot, "jpg", byteArrayOutputStream);
 			byteArrayOutputStream.flush();
-			outputStream.write(ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array());
-			//size sent
-			//for(var arrByte : byteArrayOutputStream.toByteArray())
-			//	System.out.print(arrByte + ",");
-			String diag = "";
-			for(var bytee : ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array())
-				diag = diag + "," + bytee;
 			
-			System.out.println("size: " + byteArrayOutputStream.size() + ", bytes:\n" + diag);
+			outputStream.write(ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array());
+			
 			outputStream.write(byteArrayOutputStream.toByteArray());
 			outputStream.flush();
-			//image sent
-			System.out.println("image sent");
 		}
 		
 		BufferedImage getScreenShot() {
-			return window.drawImage(screenCapturer.createScreenCapture(screenRectangle));
+			return screenCapturer.createScreenCapture(screenRectangle);
 		}
 	}
 	
@@ -96,19 +87,20 @@ public class PassiveClient extends Client{
 		
 		@Override
 		public void run() {
-			do{
-				try {
-					moveMouseTo(inputStream.readChar(), inputStream.readChar());
-				}catch(IOException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-			}while(true);
+			try {
+				do {
+					inputExecutor.mouseMove(inputStream.readChar(), inputStream.readChar());
+					System.out.println(System.currentTimeMillis());
+				}while(true);
+			}catch(IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
 		}
 		
-		void moveMouseTo(int x, int y) {
+		/*void moveMouseTo(int x, int y) {
 			inputExecutor.mouseMove(x, y);
-		}
+		}*/
 	}
 	
 	private class MetaCommunicator extends Thread {

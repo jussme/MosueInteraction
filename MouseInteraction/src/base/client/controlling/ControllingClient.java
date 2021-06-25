@@ -1,11 +1,10 @@
 package base.client.controlling;
 
-import java.awt.event.MouseEvent;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -17,7 +16,6 @@ import base.client.Client;
 
 public class ControllingClient extends Client{
 	private final ControllingClientWindow controllingClientWindow;
-	private InputSender inputSender;
 	
 	private class MetaCommunicator extends Thread {
 		
@@ -32,6 +30,7 @@ public class ControllingClient extends Client{
 		MediaReceiver(Socket graphicsInputSocket){
 			try {
 				graphicsInputStream = new BufferedInputStream(graphicsInputSocket.getInputStream());
+				
 				this.start();
 			}catch(IOException e) {
 				e.printStackTrace();
@@ -42,21 +41,15 @@ public class ControllingClient extends Client{
 		BufferedImage receiveScreenShot() throws IOException{
 			byte[] sizeArray = new byte[4];
 			graphicsInputStream.read(sizeArray);
+			
 			int size = ByteBuffer.wrap(sizeArray).asIntBuffer().get();
-			String diag = "";
-			for(var bytee : ByteBuffer.wrap(sizeArray).array()) {
-				diag = diag + "," + bytee;
-			}
-			System.out.println(size + ", bytes:\n" + diag);
+			
 			byte[] imageByteBuffer = new byte[size];
 			graphicsInputStream.readNBytes(imageByteBuffer, 0, size);
 			
-			System.out.println("\n\n");
 			BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageByteBuffer));
-			System.out.println(img);
-			ImageIO.write(img, "jgp", new File(System.currentTimeMillis() + ".jpg"));
+		
 			return img;
-			
 		}
 		
 		@Override
@@ -64,7 +57,7 @@ public class ControllingClient extends Client{
 			do {
 				try {
 					controllingClientWindow.drawImage(receiveScreenShot());
-					Thread.sleep(SCREEN_REFRESH_DELAY);
+					Thread.sleep(TOTAL_REFRESH_DELAY);
 				}catch(IOException | InterruptedException e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -75,16 +68,31 @@ public class ControllingClient extends Client{
 	
 	private class InputSender extends Thread {
 		DataOutputStream dataOutputStream;
+		final Point latestMouseCoords;
+		int lastX = 10;
+		int lastY = 10;
 		
 		InputSender(Socket outputSocket) throws IOException{
 			this.dataOutputStream = new DataOutputStream(outputSocket.getOutputStream());
+			this.latestMouseCoords = controllingClientWindow.getLatestMouseCoordsObject();
+			
+			this.start();
 		}
 		
-		void receiveMouseEvent(MouseEvent e) {
+		@Override
+		public void run() {
 			try {
-				dataOutputStream.writeChar(e.getX());
-				dataOutputStream.writeChar(e.getY());
-			}catch(IOException ex) {
+				do {
+					if(lastX != latestMouseCoords.x || lastY != latestMouseCoords.y) {
+						dataOutputStream.writeChar(latestMouseCoords.x);
+						dataOutputStream.writeChar(latestMouseCoords.y);
+						lastX = latestMouseCoords.x;
+						lastY = latestMouseCoords.y;
+					}
+					System.out.println(System.currentTimeMillis());
+					Thread.sleep(TOTAL_REFRESH_DELAY);
+				}while(true);
+			}catch(InterruptedException | IOException ex) {
 				ex.printStackTrace();
 				System.exit(1);
 			}
@@ -92,7 +100,7 @@ public class ControllingClient extends Client{
 	}
 	
 	public ControllingClient(String hostname, int remotePort, String password) {
-		controllingClientWindow = new ControllingClientWindow(this);
+		controllingClientWindow = new ControllingClientWindow();
 		launchClientSocketServicing(hostname, remotePort, password);
 	}
 	
@@ -105,14 +113,10 @@ public class ControllingClient extends Client{
 			new MediaReceiver(graphicsInputSocket);
 			
 			Socket outputSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.OutputSocket);
-			this.inputSender = new InputSender(outputSocket);
+			new InputSender(outputSocket);
 		}catch(IOException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
-	}
-	
-	public void receiveMouseEvent(MouseEvent e) {
-		inputSender.receiveMouseEvent(e);
 	}
 }
