@@ -5,6 +5,7 @@ import java.awt.HeadlessException;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
+import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -15,8 +16,9 @@ import java.nio.ByteBuffer;
 
 import javax.imageio.ImageIO;
 
-import base.ClientSocketType;
 import base.client.Client;
+import base.client.ClientSocketType;
+import base.client.InputType;
 
 public class PassiveClient extends Client{
 	final PassiveClientWindow window = new PassiveClientWindow();
@@ -77,6 +79,8 @@ public class PassiveClient extends Client{
 			try {
 				this.inputStream = new DataInputStream(inputSocket.getInputStream());
 				this.inputExecutor = new Robot();
+				
+				this.setPriority(MAX_PRIORITY);
 			}catch(IOException | AWTException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -88,19 +92,40 @@ public class PassiveClient extends Client{
 		@Override
 		public void run() {
 			try {
+				int x = 0, y = 0;
+				InputType inputType;
 				do {
-					inputExecutor.mouseMove(inputStream.readChar(), inputStream.readChar());
-					System.out.println(System.currentTimeMillis());
+					inputType = InputType.valueOf(inputStream.readChar());
+					switch(inputType) {
+						case MOUSE_MOVEMENT:
+							x = inputStream.readChar();
+							y = inputStream.readChar();
+							inputExecutor.mouseMove(x, y);
+							System.out.println(System.currentTimeMillis() + ", x = " + x + ", y = " + y);
+							break;
+						case MOUSE_PRESS:
+							int button = InputEvent.getMaskForButton(inputStream.readChar());
+							inputExecutor.mousePress(button);
+							System.out.println("button" + button);
+							break;
+						case MOUSE_RELEASE:
+							inputExecutor.mouseRelease(InputEvent.getMaskForButton(inputStream.readChar()));
+							break;
+						case KEYBOARD_PRESS:
+							inputExecutor.keyPress(inputStream.readChar());
+							break;
+						case KEYBOARD_RELEASE:
+							inputExecutor.keyRelease(inputStream.readChar());
+							break;
+						default:
+							throw new IllegalArgumentException();
+					}
 				}while(true);
 			}catch(IOException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
 		}
-		
-		/*void moveMouseTo(int x, int y) {
-			inputExecutor.mouseMove(x, y);
-		}*/
 	}
 	
 	private class MetaCommunicator extends Thread {

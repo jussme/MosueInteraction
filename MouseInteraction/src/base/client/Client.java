@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 
-import base.ClientSocketType;
-
 public class Client {
 	public static final int TOTAL_REFRESH_DELAY = 16;
 	

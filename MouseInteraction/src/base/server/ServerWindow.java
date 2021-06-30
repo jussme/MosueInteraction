@@ -10,6 +10,8 @@ public class ServerWindow extends JFrame{
 		
 		setSize(200,200);
 		
+		setTitle("Server");
+		
 		setVisible(true);
 	}
 }

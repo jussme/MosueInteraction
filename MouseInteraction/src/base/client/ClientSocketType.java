@@ -1,4 +1,4 @@
-package base;
+package base.client;
 
 public enum ClientSocketType{
 	GraphicsInputSocket(0),
@@ -8,14 +8,14 @@ public enum ClientSocketType{
 	OutputSocket(4),
 	GraphicsOutputSocket(5);
 	
-	int intType;
-	static int nOfTypes = 6;
+	private int intType;
+	private static int nOfTypes = 6;
 	
 	public int getIntType() {
 		return this.intType;
 	}
 	
-	static public int getNOfTypes() {
+	public static int getNOfTypes() {
 		return nOfTypes;
 	}
 	

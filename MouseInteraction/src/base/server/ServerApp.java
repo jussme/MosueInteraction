@@ -8,7 +8,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
-import base.ClientSocketType;
+import base.client.ClientSocketType;
 
 public class ServerApp{
 	private final Map<String, Mediator> socketsByPassword = new HashMap<>();
