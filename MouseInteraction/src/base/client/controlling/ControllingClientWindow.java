@@ -7,12 +7,15 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 
 public class ControllingClientWindow extends JFrame{
 	private static final long serialVersionUID = 1L;
 	private final DrawPane drawPane;
+	private final ControllingClient controllingClient;
 	
 	private class DrawPane extends JPanel{
 		static final long serialVersionUID = 1L;
@@ -52,9 +55,13 @@ public class ControllingClientWindow extends JFrame{
 		
 	}
 	
-	public ControllingClientWindow() {
+	public ControllingClientWindow(ControllingClient controllingClient) {
+		this.controllingClient = controllingClient;
+		
 		setSize(1600, 900);
 		setLayout(new GridLayout());
+		
+		this.setupTopMenus();
 		
 		this.drawPane = new DrawPane();
 		add(drawPane);
@@ -68,5 +75,21 @@ public class ControllingClientWindow extends JFrame{
 	
 	Point getLatestMouseCoordsObject() {
 		return this.drawPane.latestMouseCoords;
+	}
+	
+	void setupTopMenus() {
+		JMenuBar jMenuBar = new JMenuBar();
+		
+		JCheckBoxMenuItem screenSharingBox = new JCheckBoxMenuItem("Screen sharing");
+		screenSharingBox.setState(true);
+		screenSharingBox.addActionListener(event -> {
+			boolean screenSharing = ((JCheckBoxMenuItem) event.getSource()).getState();
+			controllingClient.setScreenSharing(screenSharing);
+		});
+		
+		
+		jMenuBar.add(screenSharingBox);
+		//TODO
+		this.add(jMenuBar);
 	}
 }

@@ -16,6 +16,8 @@ import base.client.Client;
 
 public class ControllingClient extends Client{
 	private final ControllingClientWindow controllingClientWindow;
+	private boolean screenSharing = true;
+	private MediaReceiver mediaReceiver;
 	
 	private class MetaCommunicator extends Thread {
 		
@@ -54,15 +56,15 @@ public class ControllingClient extends Client{
 		
 		@Override
 		public void run() {
-			do {
-				try {
+			try {
+				do {
 					controllingClientWindow.drawImage(receiveScreenShot());
 					Thread.sleep(TOTAL_REFRESH_DELAY);
-				}catch(IOException | InterruptedException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-			}while(true);
+				}while(screenSharing);
+			}catch(IOException | InterruptedException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
 		}
 	}
 	
@@ -89,7 +91,7 @@ public class ControllingClient extends Client{
 						lastX = latestMouseCoords.x;
 						lastY = latestMouseCoords.y;
 					}
-					System.out.println(System.currentTimeMillis());
+					//System.out.println(System.currentTimeMillis());
 					Thread.sleep(TOTAL_REFRESH_DELAY);
 				}while(true);
 			}catch(InterruptedException | IOException ex) {
@@ -100,7 +102,7 @@ public class ControllingClient extends Client{
 	}
 	
 	public ControllingClient(String hostname, int remotePort, String password) {
-		controllingClientWindow = new ControllingClientWindow();
+		controllingClientWindow = new ControllingClientWindow(this);
 		launchClientSocketServicing(hostname, remotePort, password);
 	}
 	
@@ -110,13 +112,20 @@ public class ControllingClient extends Client{
 			new MetaCommunicator(metaCommSocket);
 			
 			Socket graphicsInputSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.GraphicsInputSocket);
-			new MediaReceiver(graphicsInputSocket);
+			this.mediaReceiver = new MediaReceiver(graphicsInputSocket);
 			
 			Socket outputSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.OutputSocket);
 			new InputSender(outputSocket);
 		}catch(IOException e) {
 			e.printStackTrace();
 			System.exit(1);
+		}
+	}
+	
+	void setScreenSharing(boolean screenSharing) {
+		this.screenSharing = screenSharing;
+		if(screenSharing && !mediaReceiver.isAlive()) {
+			mediaReceiver.start();
 		}
 	}
 }
