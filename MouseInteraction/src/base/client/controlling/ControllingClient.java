@@ -1,6 +1,7 @@
 package base.client.controlling;
 
-import java.awt.Point;
+import static base.client.InputType.MOUSE_MOVEMENT;
+
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -8,14 +9,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
 
 import javax.imageio.ImageIO;
 
 import base.client.Client;
 import base.client.ClientSocketType;
 import base.client.InputType;
-
-import static base.client.InputType.*;
 
 public class ControllingClient extends Client{
 	private final ControllingClientWindow controllingClientWindow;
@@ -35,6 +35,8 @@ public class ControllingClient extends Client{
 		
 		MediaReceiver(Socket graphicsInputSocket){
 			try {
+				graphicsInputSocket.setReceiveBufferSize(64000);
+				
 				graphicsInputStream = new BufferedInputStream(graphicsInputSocket.getInputStream());
 				
 				this.start();
@@ -53,7 +55,7 @@ public class ControllingClient extends Client{
 		BufferedImage receiveScreenShot() throws IOException{
 			byte[] sizeArray = new byte[4];
 			graphicsInputStream.read(sizeArray);
-			
+			long time0 = System.currentTimeMillis();
 			int size = ByteBuffer.wrap(sizeArray).asIntBuffer().get();
 			
 			byte[] imageByteBuffer = new byte[size];
@@ -61,17 +63,41 @@ public class ControllingClient extends Client{
 			
 			BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageByteBuffer));
 		
+			System.out.println("read: " + (System.currentTimeMillis() - time0));
 			return img;
 		}
 		
 		@Override
 		public void run() {
+			LinkedList<Long> framesList = new LinkedList<>();
+			for(int it = 0; it < 30; ++it) {
+				framesList.add(0L);
+			}
+			
+			try{
+				while(controllingClientWindow == null) {
+					Thread.sleep(5);
+				};
+			}catch(InterruptedException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+			
 			try {
 				do {
 					controllingClientWindow.drawImage(receiveScreenShot());
-					Thread.sleep(TOTAL_REFRESH_DELAY);
+					controllingClientWindow.showFPS(
+						(int)(
+								(
+									1000f / (
+										System.currentTimeMillis() - framesList.pollLast()
+									)
+								) * 30
+							)
+						);
+					framesList.offerFirst(System.currentTimeMillis());
 				}while(screenSharing);
-			}catch(IOException | InterruptedException e) {
+			}catch(IOException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
@@ -82,38 +108,11 @@ public class ControllingClient extends Client{
 		}
 	}
 	
-	private class InputSender extends Thread {
+	private class InputSender {
 		DataOutputStream dataOutputStream;
-		final Point latestMouseCoords;
-		int lastX = 10;
-		int lastY = 10;
 		
 		InputSender(Socket outputSocket) throws IOException{
 			this.dataOutputStream = new DataOutputStream(outputSocket.getOutputStream());
-			this.latestMouseCoords = controllingClientWindow.getLatestMouseCoordsObject();
-			
-			//this.start();
-		}
-		
-		@Override
-		public void run() {
-			try {
-				do {
-					if(lastX != latestMouseCoords.x || lastY != latestMouseCoords.y) {
-						dataOutputStream.writeChar(latestMouseCoords.x);
-						dataOutputStream.writeChar(latestMouseCoords.y);
-						//dataOutputStream.flush();
-						System.out.println(System.currentTimeMillis() + ", x = " + lastX + ", y = " + lastY);
-						lastX = latestMouseCoords.x;
-						lastY = latestMouseCoords.y;
-					}
-					
-					Thread.sleep(TOTAL_REFRESH_DELAY);
-				}while(true);
-			}catch(InterruptedException | IOException ex) {
-				ex.printStackTrace();
-				System.exit(1);
-			}
 		}
 		
 		void sendMouseMovement(int x, int y) {
@@ -126,6 +125,7 @@ public class ControllingClient extends Client{
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
+				System.exit(1);
 			}
 		}
 		
@@ -138,13 +138,14 @@ public class ControllingClient extends Client{
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
+				System.exit(1);
 			}
 		}
 	}
 	
 	public ControllingClient(String hostname, int remotePort, String password) {
-		launchClientSocketServicing(hostname, remotePort, password);
 		controllingClientWindow = new ControllingClientWindow(this);
+		launchClientSocketServicing(hostname, remotePort, password);
 	}
 	
 	private void launchClientSocketServicing(String hostname, int remotePort, String password) {
@@ -165,13 +166,16 @@ public class ControllingClient extends Client{
 	
 	void setScreenSharing(boolean screenSharing) {
 		this.screenSharing = screenSharing;
-		if(screenSharing && !mediaReceiver.isAlive()) {
-			try {
-				mediaReceiver.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				System.exit(1);
+		if(screenSharing) {
+			if(mediaReceiver.isAlive()) {
+				try {
+					mediaReceiver.join();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
 			}
+			
 			mediaReceiver = mediaReceiver.cloneMediaReceiver();
 		}
 	}

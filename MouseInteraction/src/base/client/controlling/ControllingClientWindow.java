@@ -1,10 +1,10 @@
 package base.client.controlling;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -28,7 +28,7 @@ public class ControllingClientWindow extends JFrame{
 	private class DrawPane extends JPanel{
 		static final long serialVersionUID = 1L;
 		BufferedImage currentFrame;
-		final Point latestMouseCoords = new Point(10, 10);
+		int fps;
 		
 		DrawPane(){
 			
@@ -90,8 +90,6 @@ public class ControllingClientWindow extends JFrame{
 
 				@Override
 				public void mouseMoved(MouseEvent e) {
-					latestMouseCoords.x = e.getX();
-					latestMouseCoords.y = e.getY();
 					controllingClient.sendMouseMovement(e.getX(), e.getY());
 				}
 			});
@@ -104,6 +102,10 @@ public class ControllingClientWindow extends JFrame{
 		public void paintComponent(Graphics g) {
 			super.paintComponent(g);
 			g.drawImage(currentFrame, 0, 0, null);
+			
+			g.setColor(Color.RED);
+			g.setFont(g.getFont().deriveFont((float)(g.getFont().getSize() * 4)));
+			g.drawString(""+fps, 70, 70);
 		}
 		
 		void drawImage(BufferedImage image){
@@ -111,6 +113,11 @@ public class ControllingClientWindow extends JFrame{
 			repaint();
 		}
 		
+		void showFPS(int fps) {
+			this.fps = fps;
+			System.out.println("fps: " + System.currentTimeMillis());
+			repaint();
+		}
 		
 	}
 	
@@ -138,8 +145,8 @@ public class ControllingClientWindow extends JFrame{
 		drawPane.drawImage(image);
 	}
 	
-	Point getLatestMouseCoordsObject() {
-		return this.drawPane.latestMouseCoords;
+	void showFPS(int fps) {
+		drawPane.showFPS(fps);
 	}
 	
 	void setupTopMenus() {

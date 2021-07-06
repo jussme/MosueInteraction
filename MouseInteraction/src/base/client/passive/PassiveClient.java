@@ -47,15 +47,16 @@ public class PassiveClient extends Client{
 			try {
 				do {
 					sendScreenShot(getScreenShot());
-					Thread.sleep(TOTAL_REFRESH_DELAY);
+					//Thread.sleep(TOTAL_REFRESH_DELAY);
 				}while(true);
-			}catch(IOException | InterruptedException e) {
+			}catch(IOException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
 		}
 		
 		void sendScreenShot(BufferedImage screenShot) throws IOException{
+			long time0 = System.currentTimeMillis();
 			var byteArrayOutputStream = new ByteArrayOutputStream();
 			ImageIO.write(screenShot, "jpg", byteArrayOutputStream);
 			byteArrayOutputStream.flush();
@@ -64,6 +65,8 @@ public class PassiveClient extends Client{
 			
 			outputStream.write(byteArrayOutputStream.toByteArray());
 			outputStream.flush();
+			
+			System.out.println("write: " + (System.currentTimeMillis() - time0));
 		}
 		
 		BufferedImage getScreenShot() {
@@ -96,26 +99,24 @@ public class PassiveClient extends Client{
 				InputType inputType;
 				do {
 					inputType = InputType.valueOf(inputStream.readChar());
+					x = inputStream.readChar();
 					switch(inputType) {
 						case MOUSE_MOVEMENT:
-							x = inputStream.readChar();
 							y = inputStream.readChar();
 							inputExecutor.mouseMove(x, y);
-							System.out.println(System.currentTimeMillis() + ", x = " + x + ", y = " + y);
+							//System.out.println(System.currentTimeMillis() + ", x = " + x + ", y = " + y);
 							break;
 						case MOUSE_PRESS:
-							int button = InputEvent.getMaskForButton(inputStream.readChar());
-							inputExecutor.mousePress(button);
-							System.out.println("button" + button);
+							inputExecutor.mousePress(InputEvent.getMaskForButton(x));
 							break;
 						case MOUSE_RELEASE:
-							inputExecutor.mouseRelease(InputEvent.getMaskForButton(inputStream.readChar()));
+							inputExecutor.mouseRelease(InputEvent.getMaskForButton(x));
 							break;
 						case KEYBOARD_PRESS:
-							inputExecutor.keyPress(inputStream.readChar());
+							inputExecutor.keyPress(x);
 							break;
 						case KEYBOARD_RELEASE:
-							inputExecutor.keyRelease(inputStream.readChar());
+							inputExecutor.keyRelease(x);
 							break;
 						default:
 							throw new IllegalArgumentException();

@@ -3,6 +3,7 @@ package base.server;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -64,7 +65,9 @@ public class ServerApp{
 	private void launchServerSocketServicing(int localPort) {
 		try {
 			@SuppressWarnings("resource")
-			var serverSocket = new ServerSocket(localPort);
+			var serverSocket = new ServerSocket();
+			//serverSocket.setReceiveBufferSize(64000);
+			serverSocket.bind(new InetSocketAddress(localPort));
 			Socket buff;
 			while(true){
 				buff = serverSocket.accept();
