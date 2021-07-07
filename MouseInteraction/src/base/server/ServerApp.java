@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,6 +25,22 @@ public class ServerApp{
 		public boolean bindSocket(Socket clientSocket, ClientSocketType clientSocketType) {
 			if(sockets[clientSocketType.getIntType()] == null) {
 				sockets[clientSocketType.getIntType()] = clientSocket;
+				
+				try {
+				  switch(clientSocketType) {
+            case OutputSocket:
+              clientSocket.setReceiveBufferSize(8);
+              break;
+            case InputSocket:
+              clientSocket.setSendBufferSize(8);
+              break;
+            default:
+              break;
+				  }
+				} catch (SocketException e) {
+				  e.printStackTrace();
+				  System.exit(1);
+				}
 				
 				boolean nullIsPresent = false;
 				for(Socket s : sockets) {

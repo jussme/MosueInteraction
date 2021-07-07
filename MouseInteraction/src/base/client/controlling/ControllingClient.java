@@ -10,16 +10,16 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
-
 import javax.imageio.ImageIO;
-
 import base.client.Client;
 import base.client.ClientSocketType;
 import base.client.InputType;
 
 public class ControllingClient extends Client{
 	private final ControllingClientWindow controllingClientWindow;
+	
 	private boolean screenSharing = true;
+	
 	private MediaReceiver mediaReceiver;
 	private InputSender inputSender;
 	
@@ -45,7 +45,7 @@ public class ControllingClient extends Client{
 				System.exit(1);
 			}
 		}
-		
+
 		MediaReceiver(BufferedInputStream graphicsInputStream){
 			this.graphicsInputStream = graphicsInputStream;
 			
@@ -63,8 +63,19 @@ public class ControllingClient extends Client{
 			
 			BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageByteBuffer));
 		
-			System.out.println("read: " + (System.currentTimeMillis() - time0));
+			System.out.println(System.currentTimeMillis() + ", read: " + (System.currentTimeMillis() - time0));
 			return img;
+		}
+		
+		void sleepUntillWindowInstantiated() {
+		  try{
+        while(controllingClientWindow == null) {
+          Thread.sleep(5);
+        };
+      }catch(InterruptedException e) {
+        e.printStackTrace();
+        System.exit(1);
+      }
 		}
 		
 		@Override
@@ -74,14 +85,7 @@ public class ControllingClient extends Client{
 				framesList.add(0L);
 			}
 			
-			try{
-				while(controllingClientWindow == null) {
-					Thread.sleep(5);
-				};
-			}catch(InterruptedException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
+			sleepUntillWindowInstantiated();
 			
 			try {
 				do {
@@ -112,6 +116,8 @@ public class ControllingClient extends Client{
 		DataOutputStream dataOutputStream;
 		
 		InputSender(Socket outputSocket) throws IOException{
+		  outputSocket.setSendBufferSize(8);
+		  
 			this.dataOutputStream = new DataOutputStream(outputSocket.getOutputStream());
 		}
 		

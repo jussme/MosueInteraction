@@ -66,7 +66,7 @@ public class PassiveClient extends Client{
 			outputStream.write(byteArrayOutputStream.toByteArray());
 			outputStream.flush();
 			
-			System.out.println("write: " + (System.currentTimeMillis() - time0));
+			System.out.println(System.currentTimeMillis() + ", write: " + (System.currentTimeMillis() - time0));
 		}
 		
 		BufferedImage getScreenShot() {
@@ -80,6 +80,8 @@ public class PassiveClient extends Client{
 		
 		InputReceiver(Socket inputSocket) {
 			try {
+			  inputSocket.setReceiveBufferSize(8);
+			  
 				this.inputStream = new DataInputStream(inputSocket.getInputStream());
 				this.inputExecutor = new Robot();
 				
