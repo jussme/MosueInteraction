@@ -38,7 +38,6 @@ public class PassiveClient extends Client{
 				System.exit(1);
 			}
 			
-			
 			this.start();
 		}
 		
@@ -54,19 +53,19 @@ public class PassiveClient extends Client{
 				System.exit(1);
 			}
 		}
-		
+		int counter = 0;
 		void sendScreenShot(BufferedImage screenShot) throws IOException{
 			long time0 = System.currentTimeMillis();
 			var byteArrayOutputStream = new ByteArrayOutputStream();
-			ImageIO.write(screenShot, "jpg", byteArrayOutputStream);
+			ImageIO.write(screenShot, "png", byteArrayOutputStream);
 			byteArrayOutputStream.flush();
 			
 			outputStream.write(ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array());
 			
 			outputStream.write(byteArrayOutputStream.toByteArray());
 			outputStream.flush();
-			
-			System.out.println(System.currentTimeMillis() + ", write: " + (System.currentTimeMillis() - time0));
+			++counter;
+			System.out.println(System.currentTimeMillis() + ", count: " + counter + ", write: " + (System.currentTimeMillis() - time0));
 		}
 		
 		BufferedImage getScreenShot() {
@@ -106,7 +105,7 @@ public class PassiveClient extends Client{
 						case MOUSE_MOVEMENT:
 							y = inputStream.readChar();
 							inputExecutor.mouseMove(x, y);
-							//System.out.println(System.currentTimeMillis() + ", x = " + x + ", y = " + y);
+							System.out.println(System.currentTimeMillis() + ", mouse movement");
 							break;
 						case MOUSE_PRESS:
 							inputExecutor.mousePress(InputEvent.getMaskForButton(x));

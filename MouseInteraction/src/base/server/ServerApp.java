@@ -3,10 +3,11 @@ package base.server;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,16 +17,26 @@ public class ServerApp{
 	private final Map<String, Mediator> socketsByPassword = new HashMap<>();
 	
 	private class Mediator{
-		Socket[] sockets = new Socket[6];
+		Object[] sockets = new Object[6];
 		
-		public Mediator(Socket socket, ClientSocketType clientSocketType) {
+		Mediator(Socket socket, ClientSocketType clientSocketType) {
 			sockets[clientSocketType.getIntType()] = socket;
 		}
 		
-		public boolean bindSocket(Socket clientSocket, ClientSocketType clientSocketType) {
+		boolean allSocketsBound() {
+		  for(Object s : sockets) {
+        if(s == null) {
+          return false;
+        }
+      }
+      
+      return true;
+		}
+		
+		boolean bindSocket(Socket clientSocket, ClientSocketType clientSocketType) {
 			if(sockets[clientSocketType.getIntType()] == null) {
 				sockets[clientSocketType.getIntType()] = clientSocket;
-				
+				/*
 				try {
 				  switch(clientSocketType) {
             case OutputSocket:
@@ -41,16 +52,10 @@ public class ServerApp{
 				  e.printStackTrace();
 				  System.exit(1);
 				}
+				*/
 				
-				boolean nullIsPresent = false;
-				for(Socket s : sockets) {
-					if(s == null) {
-						nullIsPresent = true;
-					}
-				}
-				
-				if(!nullIsPresent) {
-					bindAllSockets();
+				if(allSocketsBound()) {
+					transferAllSockets();
 				}
 				
 				return true;
@@ -59,12 +64,27 @@ public class ServerApp{
 			}
 		}
 		
-		public void bindAllSockets() {
+		void transferAllSockets() {
 			for(int it = 5; it > 2; --it) {
-				int constBuff = it;
+				final int constBuff = it;
 				new Thread(() -> {
 					try {
-						sockets[constBuff].getInputStream().transferTo(sockets[ClientSocketType.getNOfTypes() - 1 - constBuff].getOutputStream());
+					  switch (ClientSocketType.valueOf(constBuff)) {
+					    case OutputSocket:
+					      DatagramSocket serverInUDP = (DatagramSocket) sockets[constBuff];
+                DatagramSocket serverOutUDP = (DatagramSocket) sockets[ClientSocketType.getNOfTypes() - 1 - constBuff];
+                byte[] buf = new byte[6];
+					      DatagramPacket packet = new DatagramPacket(buf, buf.length);
+                while(true) {
+                  serverInUDP.receive(packet);
+					        serverOutUDP.send(packet);
+					      }
+					    default:
+					      Socket serverInTCP = (Socket) sockets[constBuff];
+					      Socket serverOutTCP = (Socket) sockets[ClientSocketType.getNOfTypes() - 1 - constBuff];
+					      serverInTCP.getInputStream().transferTo(serverOutTCP.getOutputStream());
+					      break;
+					  }
 					} catch (IOException e) {
 						e.printStackTrace();
 						System.exit(1);
@@ -76,24 +96,55 @@ public class ServerApp{
 	
 	public ServerApp(int localPort) {
 		new ServerWindow();
-		launchServerSocketServicing(localPort);
+		launchServerSocketServicing_TCP(localPort);
 	}
 	
-	private void launchServerSocketServicing(int localPort) {
+	private void launchServerSocketServicing_TCP(int localPort) {
 		try {
 			@SuppressWarnings("resource")
-			var serverSocket = new ServerSocket();
+			final var serverSocket = new ServerSocket();
 			//serverSocket.setReceiveBufferSize(64000);
 			serverSocket.bind(new InetSocketAddress(localPort));
-			Socket buff;
-			while(true){
-				buff = serverSocket.accept();
-				logClientSocket(buff);System.out.println("Logged " + buff.toString());
-			}
+			new Thread(() -> {
+			  Socket buff;
+			  try {
+			    while(true){
+	          buff = serverSocket.accept();
+	          logClientSocket(buff);System.out.println("Logged " + buff.toString());
+	        }
+			  } catch (IOException e) {
+			    e.printStackTrace();
+			    System.exit(1);
+			  }
+			}).start();
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
+	}
+	
+	private void launchServerSocketServicing_UDP(int localPort) {
+	  try {
+      @SuppressWarnings("resource")
+      final var serverUdpSocket = new DatagramSocket();
+      //serverSocket.setReceiveBufferSize(64000);
+      serverUdpSocket.bind(new InetSocketAddress(localPort + 1));
+      new Thread(() -> {
+        DatagramSocket buff;
+        try {
+          while(true){
+            buff = serverSocket.accept();
+            logClientSocket(buff);System.out.println("Logged " + buff.toString());
+          }
+        } catch (IOException e) {
+          e.printStackTrace();
+          System.exit(1);
+        }
+      }).start();
+    } catch (IOException e) {
+      e.printStackTrace();
+      System.exit(1);
+    }
 	}
 	
 	private void logClientSocket(Socket socket) throws IOException{

@@ -1,18 +1,26 @@
 package base.client;
 
+import java.net.DatagramSocket;
+import java.net.Socket;
+
 public enum ClientSocketType{
-	GraphicsInputSocket(0),
-	InputSocket(1),
-	MetaPassiveSocket(2),
-	MetaControllingSocket(3),
-	OutputSocket(4),
-	GraphicsOutputSocket(5);
+	GraphicsInputSocket(0, Socket.class),
+	InputSocket(1, DatagramSocket.class),
+	MetaPassiveSocket(2, Socket.class),
+	MetaControllingSocket(3, Socket.class),
+	OutputSocket(4, DatagramSocket.class),
+	GraphicsOutputSocket(5, Socket.class);
 	
 	private int intType;
+	private Class<?> cl;
 	private static int nOfTypes = 6;
 	
 	public int getIntType() {
 		return this.intType;
+	}
+	
+	public Class<?> getCorrespondingClass() {
+	  return this.cl;
 	}
 	
 	public static int getNOfTypes() {
@@ -28,7 +36,8 @@ public enum ClientSocketType{
 		return null;
 	}
 	
-	private ClientSocketType(int intType){
+	private ClientSocketType(int intType, Class<?> cl){
 		this.intType = intType;
+		this.cl = cl;
 	}
 }

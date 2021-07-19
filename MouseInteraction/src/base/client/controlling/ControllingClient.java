@@ -51,7 +51,7 @@ public class ControllingClient extends Client{
 			
 			this.start();
 		}
-		
+		int counter = 0;
 		BufferedImage receiveScreenShot() throws IOException{
 			byte[] sizeArray = new byte[4];
 			graphicsInputStream.read(sizeArray);
@@ -62,8 +62,8 @@ public class ControllingClient extends Client{
 			graphicsInputStream.readNBytes(imageByteBuffer, 0, size);
 			
 			BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageByteBuffer));
-		
-			System.out.println(System.currentTimeMillis() + ", read: " + (System.currentTimeMillis() - time0));
+			++counter;
+			System.out.println(System.currentTimeMillis() + ", count: " + counter + ", read: " + (System.currentTimeMillis() - time0));
 			return img;
 		}
 		
@@ -124,10 +124,11 @@ public class ControllingClient extends Client{
 		void sendMouseMovement(int x, int y) {
 			try {
 				synchronized(dataOutputStream) {
-					dataOutputStream.writeChar(MOUSE_MOVEMENT.getIntType());
+					dataOutputStream.writeChar(MOUSE_MOVEMENT.getIntType());//TODO < 2 bytes
 					dataOutputStream.writeChar(x);
 					dataOutputStream.writeChar(y);
 					dataOutputStream.flush();
+					System.out.println(System.currentTimeMillis() + ", mouse movement");
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
