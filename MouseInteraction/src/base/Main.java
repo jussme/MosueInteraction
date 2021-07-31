@@ -42,13 +42,13 @@ public class Main {
 						switch(chooseMode()) {
 							case PassiveClient:
 								new PassiveClient(
-										getHostnameInput(),
+										getHostnameOrIPInput(),
 										getPortNumberInput(),
 										getPasswordInput());
 								break;
 							case ControllingClient:
 								new ControllingClient(
-										getHostnameInput(),
+										getHostnameOrIPInput(),
 										getPortNumberInput(),
 										getPasswordInput());
 								break;
@@ -180,6 +180,7 @@ public class Main {
 				Mode.values()[0]);
 	}
 	
+	//TODO DRY
 	private static int getPortNumberInput() {
 		try{
 			String portNumberStr = JOptionPane.showInputDialog(null, "Server port:", "28010");
@@ -194,7 +195,7 @@ public class Main {
 		
 	}
 	
-	private static String getHostnameInput() {
+	private static String getHostnameOrIPInput() {
 		String hostname = JOptionPane.showInputDialog(null, "Server hostname or IP: ");
 		if(!hostname.matches(VALID_HOSTNAME_REGEX) && !hostname.matches(VALID_IP_ADDRESS_REGEX)) {
 			notifyOfFormatError();

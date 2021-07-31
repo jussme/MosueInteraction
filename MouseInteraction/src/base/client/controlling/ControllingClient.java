@@ -157,13 +157,13 @@ public class ControllingClient extends Client{
 	
 	private void launchClientSocketServicing(String hostname, int remotePort, String password) {
 		try {
-			Socket metaCommSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.MetaControllingSocket);
+			Socket metaCommSocket = logTCPSocketOn(hostname, remotePort, password, ClientSocketType.MetaControllingSocket);
 			new MetaCommunicator(metaCommSocket);
 			
-			Socket graphicsInputSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.GraphicsInputSocket);
+			Socket graphicsInputSocket = logTCPSocketOn(hostname, remotePort, password, ClientSocketType.GraphicsInputSocket);
 			this.mediaReceiver = new MediaReceiver(graphicsInputSocket);
 			
-			Socket outputSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.OutputSocket);
+			Socket outputSocket = logTCPSocketOn(hostname, remotePort, password, ClientSocketType.OutputSocket);
 			this.inputSender = new InputSender(outputSocket);
 		}catch(IOException e) {
 			e.printStackTrace();

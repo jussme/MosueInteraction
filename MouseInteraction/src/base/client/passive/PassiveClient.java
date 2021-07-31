@@ -143,13 +143,13 @@ public class PassiveClient extends Client{
 	
 	private void launchClientSocketServicing(String hostname, int remotePort, String password) {
 		try {
-			Socket metaCommSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.MetaPassiveSocket);
+			Socket metaCommSocket = logTCPSocketOn(hostname, remotePort, password, ClientSocketType.MetaPassiveSocket);
 			new MetaCommunicator(metaCommSocket);
 			
-			Socket graphicsSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.GraphicsOutputSocket);
+			Socket graphicsSocket = logTCPSocketOn(hostname, remotePort, password, ClientSocketType.GraphicsOutputSocket);
 			new MediaSender(graphicsSocket);
 			
-			Socket inputSocket = logSocketOn(hostname, remotePort, password, ClientSocketType.InputSocket);
+			Socket inputSocket = logTCPSocketOn(hostname, remotePort, password, ClientSocketType.InputSocket);
 			new InputReceiver(inputSocket);
 		}catch(IOException e) {
 			e.printStackTrace();

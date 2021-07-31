@@ -15,6 +15,7 @@ import base.client.ClientSocketType;
 
 public class ServerApp{
 	private final Map<String, Mediator> socketsByPassword = new HashMap<>();
+	private final Map<>
 	
 	private class Mediator{
 		Object[] sockets = new Object[6];
@@ -96,21 +97,18 @@ public class ServerApp{
 	
 	public ServerApp(int localPort) {
 		new ServerWindow();
-		launchServerSocketServicing_TCP(localPort);
+		launchTCPServerSocketServicing(localPort);
+		launchUDPServerSocketServicing(localPort + 1);
 	}
 	
-	private void launchServerSocketServicing_TCP(int localPort) {
-		try {
-			@SuppressWarnings("resource")
-			final var serverSocket = new ServerSocket();
+	private void launchTCPServerSocketServicing(int localPort) {
+		try (final var serverSocket = new ServerSocket()){
 			//serverSocket.setReceiveBufferSize(64000);
 			serverSocket.bind(new InetSocketAddress(localPort));
 			new Thread(() -> {
-			  Socket buff;
 			  try {
 			    while(true){
-	          buff = serverSocket.accept();
-	          logClientSocket(buff);System.out.println("Logged " + buff.toString());
+	          logTCPClientSocket(serverSocket.accept());
 	        }
 			  } catch (IOException e) {
 			    e.printStackTrace();
@@ -123,18 +121,13 @@ public class ServerApp{
 		}
 	}
 	
-	private void launchServerSocketServicing_UDP(int localPort) {
-	  try {
-      @SuppressWarnings("resource")
-      final var serverUdpSocket = new DatagramSocket();
-      //serverSocket.setReceiveBufferSize(64000);
-      serverUdpSocket.bind(new InetSocketAddress(localPort + 1));
+	private void launchUDPServerSocketServicing(int localPort) {
+	  try (final var serverUdpSocket = new DatagramSocket()) {
+      serverUdpSocket.bind(new InetSocketAddress(localPort));
       new Thread(() -> {
-        DatagramSocket buff;
         try {
           while(true){
-            buff = serverSocket.accept();
-            logClientSocket(buff);System.out.println("Logged " + buff.toString());
+            
           }
         } catch (IOException e) {
           e.printStackTrace();
@@ -147,7 +140,24 @@ public class ServerApp{
     }
 	}
 	
-	private void logClientSocket(Socket socket) throws IOException{
+	private void logUDPClientSocket() throws IOException {
+	  
+	  //TODO receive packet
+	  
+	  boolean found = false;
+    for(var entry : socketsByPassword.entrySet()) {
+      if(entry.getKey().equals(password)) {
+        entry.getValue().bindSocket(socket, clientSocketType);
+        found = true;
+      }
+    }
+    
+    if(!found) {
+      socketsByPassword.put(password, new Mediator(socket, clientSocketType));
+    }
+	}
+	
+	private void logTCPClientSocket(Socket socket) throws IOException{
 		var bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		String password = bufferedReader.readLine().trim();
 		ClientSocketType clientSocketType = ClientSocketType.valueOf(bufferedReader.read());
