@@ -3,6 +3,7 @@ package base.client;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
@@ -10,10 +11,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Client {
-	public static final int TOTAL_REFRESH_DELAY = 16;
-	private static final int PORT_LOWER_BOUND = 49152;
-	
-	public Socket logTCPSocketOn(String hostname, int remotePort, String password, ClientSocketType clientSocketType) throws IOException{
+	protected static final int PORT_LOWER_BOUND = 49152;
+	protected static final int PORT_UPPER_BOUND = 65535;
+  
+	protected Socket logTCPSocketOn(String hostname, int remotePort, String password, ClientSocketType clientSocketType) throws IOException{
 		Socket socket = new Socket(hostname, remotePort);
 		var bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 		bufferedWriter.write(password + "\n");
@@ -24,23 +25,18 @@ public class Client {
 		return socket;
 	}
 	
-	public DatagramSocket logUDPSocketOn(String hostname, int remotePort, String password, ClientSocketType clientSocketType) throws IOException{
+	protected InetSocketAddress logUDPSocketOn(String hostname, int remotePort, String password, ClientSocketType clientSocketType) throws IOException{
     try (DatagramSocket dSocket = new DatagramSocket(findFreePort())) {
-      //socketType and password in one packet
-      byte[] passwordInBytes = password.getBytes("UTF-8");
-      byte[] socketTypeAndPasswordByteArr = new byte[1 + passwordInBytes.length];
-      socketTypeAndPasswordByteArr[0] = (byte) clientSocketType.getIntType();
-      for (int it = 1; it < socketTypeAndPasswordByteArr.length; ++ it) {
-        socketTypeAndPasswordByteArr[it] = passwordInBytes[it];
-      }
+      byte[] payload = packSocketTypeAndPassword(clientSocketType, password);
       dSocket.send(
-          new DatagramPacket(socketTypeAndPasswordByteArr,
-              socketTypeAndPasswordByteArr.length,
+          new DatagramPacket(
+              payload,
+              payload.length,
               new InetSocketAddress(hostname, remotePort)
           )
       );
       
-      return dSocket;
+      return dffd;
     } catch(IOException e) {
       e.printStackTrace();
       System.exit(1);
@@ -48,18 +44,22 @@ public class Client {
     //to satisfy the compiler
     return null;
 	}
-	/*
-	private byte[] toByteRepresentedIPAddress(String ip) {
-	  byte[] byteIP = new byte[4];
-	  
-	  ip.split
-	  
-	  return byteIP;
+	
+	protected byte[] packSocketTypeAndPassword(ClientSocketType clientSocketType, String password) throws UnsupportedEncodingException {
+	//socketType and password in one packet
+    byte[] passwordInBytes = password.getBytes("UTF-8");
+    byte[] socketTypeAndPasswordByteArr = new byte[1 + passwordInBytes.length];
+    socketTypeAndPasswordByteArr[0] = (byte) clientSocketType.getIntType();
+    for (int it = 1; it < socketTypeAndPasswordByteArr.length; ++ it) {
+      socketTypeAndPasswordByteArr[it] = passwordInBytes[it];
+    }
+    
+    return socketTypeAndPasswordByteArr;
 	}
-	*/
-	private int findFreePort() throws IOException{
+	
+	protected int findFreePort() throws IOException{
 	  int currentPort = PORT_LOWER_BOUND;
-	  while(currentPort <= 65535) {
+	  while(currentPort <= PORT_UPPER_BOUND) {
 	    try (ServerSocket serverSocket = new ServerSocket(currentPort)) {
 	      if (serverSocket.isBound() && serverSocket.getLocalPort() == currentPort) {
 	        return currentPort;
@@ -69,6 +69,6 @@ public class Client {
 	    }
 	  }
 	  
-	  throw new IOException("No free port in the <49152, 65535> range");
+	  throw new IOException("No free port in the <" + PORT_LOWER_BOUND + ", " + PORT_UPPER_BOUND + "> range");
 	}
 }

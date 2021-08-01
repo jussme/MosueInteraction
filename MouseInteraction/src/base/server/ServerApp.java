@@ -15,7 +15,6 @@ import base.client.ClientSocketType;
 
 public class ServerApp{
 	private final Map<String, Mediator> socketsByPassword = new HashMap<>();
-	private final Map<>
 	
 	private class Mediator{
 		Object[] sockets = new Object[6];
@@ -122,12 +121,15 @@ public class ServerApp{
 	}
 	
 	private void launchUDPServerSocketServicing(int localPort) {
-	  try (final var serverUdpSocket = new DatagramSocket()) {
-      serverUdpSocket.bind(new InetSocketAddress(localPort));
+	  try (final var serverUDPSocket = new DatagramSocket()) {
+      serverUDPSocket.bind(new InetSocketAddress(localPort));
       new Thread(() -> {
         try {
+          byte[] recvBuffer = new byte[508];
+          DatagramPacket p = new DatagramPacket(recvBuffer, recvBuffer.length);
           while(true){
-            
+            serverUDPSocket.receive(p);
+            logUDPClientSocket(p);
           }
         } catch (IOException e) {
           e.printStackTrace();
@@ -140,7 +142,7 @@ public class ServerApp{
     }
 	}
 	
-	private void logUDPClientSocket() throws IOException {
+	private void logUDPClientSocket(DatagramPacket p) throws IOException {
 	  
 	  //TODO receive packet
 	  
