@@ -11,6 +11,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
@@ -77,7 +78,7 @@ public class PassiveClient extends Client{
 		DataInputStream inputStream;
 		Robot inputExecutor;
 		
-		InputReceiver(Socket inputSocket) {
+		InputReceiver(DatagramSocket inputSocket) {
 			try {
 			  inputSocket.setReceiveBufferSize(8);
 			  
@@ -149,7 +150,7 @@ public class PassiveClient extends Client{
 			Socket graphicsSocket = logTCPSocketOn(hostname, remotePort, password, ClientSocketType.GraphicsOutputSocket);
 			new MediaSender(graphicsSocket);
 			
-			Socket inputSocket = logTCPSocketOn(hostname, remotePort, password, ClientSocketType.InputSocket);
+			DatagramSocket inputSocket = logUDPSocketOn(hostname, remotePort, password, ClientSocketType.InputSocket);
 			new InputReceiver(inputSocket);
 		}catch(IOException e) {
 			e.printStackTrace();

@@ -5,12 +5,15 @@ import static base.client.InputType.MOUSE_MOVEMENT;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
+
 import javax.imageio.ImageIO;
+
 import base.client.Client;
 import base.client.ClientSocketType;
 import base.client.InputType;
@@ -113,17 +116,22 @@ public class ControllingClient extends Client{
 	}
 	
 	private class InputSender {
-		DataOutputStream dataOutputStream;
+		DatagramSocket datagramSocket;
+		DatagramPacket payload;
 		
-		InputSender(Socket outputSocket) throws IOException{
-		  outputSocket.setSendBufferSize(8);
+		InputSender(DatagramSocket outputSocket) throws IOException{
+		  //outputSocket.setSendBufferSize(8);
 		  
-			this.dataOutputStream = new DataOutputStream(outputSocket.getOutputStream());
+			this.datagramSocket = outputSocket;
+			
+			var payloadByteArr = new byte[6];
+			this.payload = new DatagramPacket(payloadByteArr, payloadByteArr.length, outputSocket.getRemoteSocketAddress());
 		}
 		
 		void sendMouseMovement(int x, int y) {
 			try {
-				synchronized(dataOutputStream) {
+				synchronized(datagramSocket) {
+				  byte[] payload = this.payload.getData();
 					dataOutputStream.writeChar(MOUSE_MOVEMENT.getIntType());//TODO < 2 bytes
 					dataOutputStream.writeChar(x);
 					dataOutputStream.writeChar(y);
@@ -163,7 +171,7 @@ public class ControllingClient extends Client{
 			Socket graphicsInputSocket = logTCPSocketOn(hostname, remotePort, password, ClientSocketType.GraphicsInputSocket);
 			this.mediaReceiver = new MediaReceiver(graphicsInputSocket);
 			
-			Socket outputSocket = logTCPSocketOn(hostname, remotePort, password, ClientSocketType.OutputSocket);
+			DatagramSocket outputSocket = logUDPSocketOn(hostname, remotePort, password, ClientSocketType.OutputSocket);
 			this.inputSender = new InputSender(outputSocket);
 		}catch(IOException e) {
 			e.printStackTrace();
