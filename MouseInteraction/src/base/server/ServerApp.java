@@ -28,20 +28,24 @@ public class ServerApp{
 		try (final var serverSocket = new ServerSocket()){
 			//serverSocket.setReceiveBufferSize(64000);
 			serverSocket.bind(new InetSocketAddress(localPort));
-			new Thread(() -> {
-			  try {
-			    while(true){
-	          logClientSocket(serverSocket.accept());
-	        }
-			  } catch (IOException e) {
-			    e.printStackTrace();
-			    System.exit(1);
-			  }
-			}).start();
+			launchClientSocketServicing(serverSocket);
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
+	}
+	
+	private void launchClientSocketServicing(ServerSocket serverSocket) {
+	  new Thread(() -> {
+      try {
+        while(true){
+          logClientSocket(serverSocket.accept());
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+        System.exit(1);
+      }
+    }).start();
 	}
 	
 	private void logClientSocket(Socket socket) throws IOException {
@@ -58,7 +62,7 @@ public class ServerApp{
         new DataOutputStream(socket.getOutputStream()).writeChar(foundFreePort);
         loggedSocket = new DatagramSocket(foundFreePort);
       default:
-        boolean found = false;
+        boolean found = false;//TODO refactoring methods
         for(var entry : socketsByPassword.entrySet()) {
           if(entry.getKey().equals(password)) {
             entry.getValue().bindSocket(loggedSocket, clientSocketType);

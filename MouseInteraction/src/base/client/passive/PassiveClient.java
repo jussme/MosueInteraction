@@ -9,8 +9,8 @@ import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -20,6 +20,7 @@ import javax.imageio.ImageIO;
 import base.client.Client;
 import base.client.ClientSocketType;
 import base.client.InputType;
+import base.client.controlling.ControllingClient;
 
 public class PassiveClient extends Client{
 	final PassiveClientWindow window = new PassiveClientWindow();
@@ -75,15 +76,21 @@ public class PassiveClient extends Client{
 	}
 	
 	private class InputReceiver extends Thread{
-		DataInputStream inputStream;
+		DatagramSocket datagramSocket;
+		DatagramPacket packet;
+		byte[] payload;
+		
 		Robot inputExecutor;
 		
 		InputReceiver(DatagramSocket inputSocket) {
 			try {
 			  inputSocket.setReceiveBufferSize(8);
 			  
-				this.inputStream = new DataInputStream(inputSocket.getInputStream());
+				this.datagramSocket = inputSocket;
 				this.inputExecutor = new Robot();
+				
+	      this.payload = new byte[ControllingClient.InputSender.MAX_PAYLOAD_LENGTH];
+	      this.packet = new DatagramPacket(payload, payload.length, inputSocket.getRemoteSocketAddress());
 				
 				this.setPriority(MAX_PRIORITY);
 			}catch(IOException | AWTException e) {
@@ -96,38 +103,39 @@ public class PassiveClient extends Client{
 		
 		@Override
 		public void run() {
-			try {
-				int x = 0, y = 0;
-				InputType inputType;
-				do {
-					inputType = InputType.valueOf(inputStream.readChar());
-					x = inputStream.readChar();
-					switch(inputType) {
-						case MOUSE_MOVEMENT:
-							y = inputStream.readChar();
-							inputExecutor.mouseMove(x, y);
-							System.out.println(System.currentTimeMillis() + ", mouse movement");
-							break;
-						case MOUSE_PRESS:
-							inputExecutor.mousePress(InputEvent.getMaskForButton(x));
-							break;
-						case MOUSE_RELEASE:
-							inputExecutor.mouseRelease(InputEvent.getMaskForButton(x));
-							break;
-						case KEYBOARD_PRESS:
-							inputExecutor.keyPress(x);
-							break;
-						case KEYBOARD_RELEASE:
-							inputExecutor.keyRelease(x);
-							break;
-						default:
-							throw new IllegalArgumentException();
-					}
-				}while(true);
-			}catch(IOException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
+		  try {
+        int x = 0, y = 0;
+        InputType inputType;
+        do {
+          datagramSocket.receive(packet);
+          inputType = InputType.valueOf(payload[0]);
+          x = payload[1] + (payload[2] << 8);
+          switch(inputType) {
+            case MOUSE_MOVEMENT:
+              y = payload[3] + (payload[4] << 8);
+              inputExecutor.mouseMove(x, y);
+              System.out.println(System.currentTimeMillis() + ", mouse movement");
+              break;
+            case MOUSE_PRESS:
+              inputExecutor.mousePress(InputEvent.getMaskForButton(x));
+              break;
+            case MOUSE_RELEASE:
+              inputExecutor.mouseRelease(InputEvent.getMaskForButton(x));
+              break;
+            case KEYBOARD_PRESS:
+              inputExecutor.keyPress(x);
+              break;
+            case KEYBOARD_RELEASE:
+              inputExecutor.keyRelease(x);
+              break;
+            default:
+              throw new IllegalArgumentException();
+          }
+        }while(true);
+      }catch(IOException e) {
+        e.printStackTrace();
+        System.exit(1);
+      }
 		}
 	}
 	

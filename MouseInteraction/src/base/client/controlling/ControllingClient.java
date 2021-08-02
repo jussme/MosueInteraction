@@ -115,27 +115,30 @@ public class ControllingClient extends Client{
 		}
 	}
 	
-	private class InputSender {
-		DatagramSocket datagramSocket;
-		DatagramPacket payload;
+	public class InputSender {
+		public static final int MAX_PAYLOAD_LENGTH = 5;
+	  private DatagramSocket datagramSocket;
+		private DatagramPacket packet;
+		private byte[] payload;
 		
-		InputSender(DatagramSocket outputSocket) throws IOException{
+		private InputSender(DatagramSocket outputSocket) throws IOException{
 		  //outputSocket.setSendBufferSize(8);
 		  
 			this.datagramSocket = outputSocket;
 			
-			var payloadByteArr = new byte[6];
-			this.payload = new DatagramPacket(payloadByteArr, payloadByteArr.length, outputSocket.getRemoteSocketAddress());
+			this.payload = new byte[MAX_PAYLOAD_LENGTH];
+			this.packet = new DatagramPacket(payload, payload.length, outputSocket.getRemoteSocketAddress());
 		}
 		
-		void sendMouseMovement(int x, int y) {
+		private void sendMouseMovement(int x, int y) {
 			try {
 				synchronized(datagramSocket) {
-				  byte[] payload = this.payload.getData();
-					dataOutputStream.writeChar(MOUSE_MOVEMENT.getIntType());//TODO < 2 bytes
-					dataOutputStream.writeChar(x);
-					dataOutputStream.writeChar(y);
-					dataOutputStream.flush();
+				  payload[0] = (byte) MOUSE_MOVEMENT.getIntType();
+				  payload[1] = (byte) x;
+				  payload[2] = (byte) (x >> 8);
+				  payload[3] = (byte) y;
+          payload[4] = (byte) (y >> 8);
+          datagramSocket.send(packet);
 					System.out.println(System.currentTimeMillis() + ", mouse movement");
 				}
 			} catch (IOException e) {
@@ -144,12 +147,13 @@ public class ControllingClient extends Client{
 			}
 		}
 		
-		void sendClick(int code, InputType inputType) {
+		private void sendClick(int code, InputType inputType) {
 			try {
-				synchronized(dataOutputStream) {
-					dataOutputStream.writeChar(inputType.getIntType());
-					dataOutputStream.writeChar(code);
-					dataOutputStream.flush();
+				synchronized(datagramSocket) {
+				  payload[0] = (byte) inputType.getIntType();
+				  payload[1] = (byte) code;
+				  payload[2] = (byte) (code >> 8);
+				  datagramSocket.send(packet);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
