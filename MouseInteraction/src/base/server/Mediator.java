@@ -6,6 +6,7 @@ import java.net.DatagramSocket;
 import java.net.Socket;
 
 import base.client.ClientSocketType;
+import base.client.controlling.ControllingClient;
 
 class Mediator{
   Object[] sockets = new Object[6];
@@ -35,7 +36,7 @@ class Mediator{
       }
       
       return true;
-    }else {
+    } else {
       return false;
     }
   }
@@ -49,11 +50,13 @@ class Mediator{
             case OutputSocket:
               DatagramSocket serverInUDP = (DatagramSocket) sockets[constBuff];
               DatagramSocket serverOutUDP = (DatagramSocket) sockets[ClientSocketType.getNOfTypes() - 1 - constBuff];
-              byte[] buf = new byte[6];
-              DatagramPacket packet = new DatagramPacket(buf, buf.length);
+              byte[] buf = new byte[ControllingClient.InputSender.MAX_PAYLOAD_LENGTH];
+              DatagramPacket incomingPacket = new DatagramPacket(buf, buf.length);
+              System.out.println(serverOutUDP.getRemoteSocketAddress());
+              DatagramPacket outgoingPacket = new DatagramPacket(buf, buf.length, serverOutUDP.getRemoteSocketAddress());
               while(true) {
-                serverInUDP.receive(packet);
-                serverOutUDP.send(packet);
+                serverInUDP.receive(incomingPacket);System.out.println("sent from " + incomingPacket.getPort() + " to " + outgoingPacket.getPort());
+                serverOutUDP.send(outgoingPacket);
               }
             default:
               Socket serverInTCP = (Socket) sockets[constBuff];

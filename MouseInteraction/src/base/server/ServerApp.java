@@ -17,7 +17,7 @@ public class ServerApp{
   protected static final int PORT_LOWER_BOUND = 49152;
   protected static final int PORT_UPPER_BOUND = 65535;
 	
-  private final Map<String, Mediator> socketsByPassword = new HashMap<>();
+  private final Map<Credentials, Mediator> socketsByPassword = new HashMap<>();
 	
 	public ServerApp(int localPort) {
 		new ServerWindow();
@@ -25,19 +25,12 @@ public class ServerApp{
 	}
 	
 	private void launchServerSocketServicing(int localPort) {
-		try (final var serverSocket = new ServerSocket()){
-			//serverSocket.setReceiveBufferSize(64000);
-			serverSocket.bind(new InetSocketAddress(localPort));
-			launchClientSocketServicing(serverSocket);
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-	}
-	
-	private void launchClientSocketServicing(ServerSocket serverSocket) {
 	  new Thread(() -> {
       try {
+        @SuppressWarnings("resource")
+        var serverSocket = new ServerSocket();
+        //serverSocket.setReceiveBufferSize(64000);
+        serverSocket.bind(new InetSocketAddress(localPort));
         while(true){
           logClientSocket(serverSocket.accept());
         }
@@ -48,51 +41,72 @@ public class ServerApp{
     }).start();
 	}
 	
-	private void logClientSocket(Socket socket) throws IOException {
-	  var bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-    String password = bufferedReader.readLine();
-    ClientSocketType clientSocketType = ClientSocketType.valueOf(bufferedReader.read());
+//should be in its own file? dont know if it's even necessary, readCredentials() could be pasted into logClientSocket
+	private static class Credentials {
+    String password;
+    ClientSocketType clientSocketType;
+    int udpSocketRemotePort;
     
+    Credentials(String password, ClientSocketType clientSocketType) {
+      this.password = password;
+      this.clientSocketType = clientSocketType;
+    }
+    
+    Credentials(String password, ClientSocketType clientSocketType, int udpSocketRemotePort) {
+      this.password = password;
+      this.clientSocketType = clientSocketType;
+      this.udpSocketRemotePort = udpSocketRemotePort;
+    }
+    static Credentials readCredentials(Socket socket) throws IOException{
+      var bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+      String password = bufferedReader.readLine();
+      ClientSocketType clientSocketType = ClientSocketType.valueOf(bufferedReader.read());
+      if(clientSocketType.getCorrespondingClass() == DatagramSocket.class) {
+        return new Credentials(password, clientSocketType, bufferedReader.read());
+      }
+      
+      return new Credentials(password, clientSocketType);
+    }
+    
+    boolean clientCredentialsMatch(Credentials credentials) {
+      return this.password.equals(credentials.password);
+    }
+  }
+	
+	private void logClientSocket(Socket socket) throws IOException {
+	  Credentials credentials = Credentials.readCredentials(socket);
+	  
     Object loggedSocket = socket;
-    switch (clientSocketType) {
+    switch (credentials.clientSocketType) {
       //UDP sockets need to be sent a new port number of the receiving DatagramSocket
       case InputSocket:
       case OutputSocket:
-        int foundFreePort = findFreePort();
-        new DataOutputStream(socket.getOutputStream()).writeChar(foundFreePort);
-        loggedSocket = new DatagramSocket(foundFreePort);
+        loggedSocket = new DatagramSocket(); DatagramSocket ds = (DatagramSocket) loggedSocket;
+        ds.connect(new InetSocketAddress(socket.getInetAddress(), credentials.udpSocketRemotePort));
+        notifyClientOfServerUDPPort(socket, ds.getLocalPort());
       default:
-        boolean found = false;//TODO refactoring methods
-        for(var entry : socketsByPassword.entrySet()) {
-          if(entry.getKey().equals(password)) {
-            entry.getValue().bindSocket(loggedSocket, clientSocketType);
-            /*entry.getValue().bindSocket(datagramSocketBeingLoggedOn? datagramSocket : socket, clientSocketType);
-              fun but the compiler has to know the method called,
-              cant have an alternative between bindSocket(DatagramSocket s) and bindSocket(Socket s)
-            */ 
-            found = true;
-          }
-        }
-        
-        if(!found) {
-          socketsByPassword.put(password, new Mediator(loggedSocket, clientSocketType));
+        Mediator foundMediator;
+        if((foundMediator = findCorrespondingMediator(credentials)) != null) {
+          foundMediator.bindSocket(loggedSocket, credentials.clientSocketType);
+        } else {
+          //new client
+          socketsByPassword.put(credentials, new Mediator(loggedSocket, credentials.clientSocketType));
         }
         break;
     }
 	}
 	
-	private int findFreePort() throws IOException{
-    int currentPort = PORT_LOWER_BOUND;
-    while(currentPort <= PORT_UPPER_BOUND) {
-      try (ServerSocket serverSocket = new ServerSocket(currentPort)) {
-        if (serverSocket.isBound() && serverSocket.getLocalPort() == currentPort) {
-          return currentPort;
-        }
-      } catch (IOException e) {
-        ++currentPort;
+	private Mediator findCorrespondingMediator(Credentials credentials) {
+	  for(var entry : socketsByPassword.entrySet()) {
+      if(entry.getKey().clientCredentialsMatch(credentials)) {
+        return entry.getValue();
       }
     }
-    
-    throw new IOException("No free port in the <" + PORT_LOWER_BOUND + ", " + PORT_UPPER_BOUND + "> range");
-  }
+	  
+	  return null;
+	}
+	
+	private void notifyClientOfServerUDPPort(Socket socket, int port) throws IOException{
+	  new DataOutputStream(socket.getOutputStream()).writeChar(port);
+	}
 }

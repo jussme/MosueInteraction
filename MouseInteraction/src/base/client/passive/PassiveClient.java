@@ -59,7 +59,7 @@ public class PassiveClient extends Client{
 		void sendScreenShot(BufferedImage screenShot) throws IOException{
 			long time0 = System.currentTimeMillis();
 			var byteArrayOutputStream = new ByteArrayOutputStream();
-			ImageIO.write(screenShot, "png", byteArrayOutputStream);
+			ImageIO.write(screenShot, "jpg", byteArrayOutputStream);
 			byteArrayOutputStream.flush();
 			
 			outputStream.write(ByteBuffer.allocate(4).putInt(byteArrayOutputStream.size()).array());
@@ -84,16 +84,16 @@ public class PassiveClient extends Client{
 		
 		InputReceiver(DatagramSocket inputSocket) {
 			try {
-			  inputSocket.setReceiveBufferSize(8);
+			  //inputSocket.setReceiveBufferSize(8);
 			  
 				this.datagramSocket = inputSocket;
 				this.inputExecutor = new Robot();
 				
 	      this.payload = new byte[ControllingClient.InputSender.MAX_PAYLOAD_LENGTH];
-	      this.packet = new DatagramPacket(payload, payload.length, inputSocket.getRemoteSocketAddress());
+	      this.packet = new DatagramPacket(payload, payload.length);
 				
 				this.setPriority(MAX_PRIORITY);
-			}catch(IOException | AWTException e) {
+			}catch(AWTException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
@@ -109,12 +109,12 @@ public class PassiveClient extends Client{
         do {
           datagramSocket.receive(packet);
           inputType = InputType.valueOf(payload[0]);
-          x = payload[1] + (payload[2] << 8);
+          x = payload[1] + (((int)payload[2]) << 8);
           switch(inputType) {
             case MOUSE_MOVEMENT:
-              y = payload[3] + (payload[4] << 8);
+              y = payload[3] + (((int)payload[4]) << 8);
               inputExecutor.mouseMove(x, y);
-              System.out.println(System.currentTimeMillis() + ", mouse movement");
+              System.out.println(System.currentTimeMillis() + ", mouse movement: " + x + ";" + y);
               break;
             case MOUSE_PRESS:
               inputExecutor.mousePress(InputEvent.getMaskForButton(x));

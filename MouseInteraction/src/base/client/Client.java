@@ -11,10 +11,16 @@ import java.net.Socket;
 public class Client {
 	protected DatagramSocket logUDPSocketOn(String hostname, int remotePort, String password, ClientSocketType clientSocketType) throws IOException {
 	  Socket socket = logTCPSocketOn(hostname, remotePort, password, clientSocketType);
+	  
+	  var datagramSocket = new DatagramSocket();
+	  
+	  var bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+	  bufferedWriter.write(datagramSocket.getLocalPort());
+	  bufferedWriter.flush();
+	  
 	  var dataInputStream = new DataInputStream(socket.getInputStream());
 	  int port = dataInputStream.readChar();
 	  
-	  var datagramSocket = new DatagramSocket();
 	  datagramSocket.connect(new InetSocketAddress(hostname, port));
 	  
 	  return datagramSocket;
