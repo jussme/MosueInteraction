@@ -13,7 +13,7 @@ public enum ClientSocketType{
 	
 	private int intType;
 	private Class<?> cl;
-	private static int nOfTypes = 6;
+	private static int nOfTypes = ClientSocketType.values().length;
 	
 	public int getIntType() {
 		return this.intType;

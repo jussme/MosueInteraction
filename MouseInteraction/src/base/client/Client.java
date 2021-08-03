@@ -16,7 +16,7 @@ public class Client {
 	  
 	  var bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 	  bufferedWriter.write(datagramSocket.getLocalPort());
-	  bufferedWriter.flush();
+	  bufferedWriter.flush();System.out.println("datagramSocket.getLocalPort(): " + datagramSocket.getLocalPort());
 	  
 	  var dataInputStream = new DataInputStream(socket.getInputStream());
 	  int port = dataInputStream.readChar();
@@ -29,7 +29,7 @@ public class Client {
 	protected Socket logTCPSocketOn(String hostname, int remotePort, String password, ClientSocketType clientSocketType) throws IOException {
 	  Socket socket = new Socket(hostname, remotePort);
     var bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-    bufferedWriter.write(password + "\n");
+    bufferedWriter.write(password + "\n");String.
     bufferedWriter.write(clientSocketType.getIntType());
     bufferedWriter.flush();
     

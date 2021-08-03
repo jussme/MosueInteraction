@@ -62,7 +62,8 @@ public class ServerApp{
       String password = bufferedReader.readLine();
       ClientSocketType clientSocketType = ClientSocketType.valueOf(bufferedReader.read());
       if(clientSocketType.getCorrespondingClass() == DatagramSocket.class) {
-        return new Credentials(password, clientSocketType, bufferedReader.read());
+        int readPort = bufferedReader.read();System.out.println("Remote listening port number by bufferedReader.read() = " + readPort);
+        return new Credentials(password, clientSocketType, readPort);
       }
       
       return new Credentials(password, clientSocketType);
@@ -83,6 +84,8 @@ public class ServerApp{
       case OutputSocket:
         loggedSocket = new DatagramSocket(); DatagramSocket ds = (DatagramSocket) loggedSocket;
         ds.connect(new InetSocketAddress(socket.getInetAddress(), credentials.udpSocketRemotePort));
+        System.out.println("SERVERAPP DIAGNOSE\n\tlogged-on udp socket on the server(local): " + ds.getLocalAddress() + ":" + ds.getLocalPort()
+          + "\n\t(remote): " + ds.getInetAddress() + ":" + ds.getPort() + "\n\treceived port: " + credentials.udpSocketRemotePort);
         notifyClientOfServerUDPPort(socket, ds.getLocalPort());
       default:
         Mediator foundMediator;

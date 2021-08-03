@@ -67,7 +67,7 @@ public class PassiveClient extends Client{
 			outputStream.write(byteArrayOutputStream.toByteArray());
 			outputStream.flush();
 			++counter;
-			System.out.println(System.currentTimeMillis() + ", count: " + counter + ", write: " + (System.currentTimeMillis() - time0));
+			//System.out.println(System.currentTimeMillis() + ", count: " + counter + ", write: " + (System.currentTimeMillis() - time0));
 		}
 		
 		BufferedImage getScreenShot() {
@@ -107,6 +107,8 @@ public class PassiveClient extends Client{
         int x = 0, y = 0;
         InputType inputType;
         do {
+          System.out.println("Passive will be receiving from: " + datagramSocket.getInetAddress() + ":" + datagramSocket.getPort());
+          System.out.println("Passive will be listening on: " + datagramSocket.getLocalAddress() + ":" + datagramSocket.getLocalPort());
           datagramSocket.receive(packet);
           inputType = InputType.valueOf(payload[0]);
           x = payload[1] + (((int)payload[2]) << 8);
@@ -114,7 +116,7 @@ public class PassiveClient extends Client{
             case MOUSE_MOVEMENT:
               y = payload[3] + (((int)payload[4]) << 8);
               inputExecutor.mouseMove(x, y);
-              System.out.println(System.currentTimeMillis() + ", mouse movement: " + x + ";" + y);
+              //System.out.println(System.currentTimeMillis() + ", mouse movement: " + x + ";" + y);
               break;
             case MOUSE_PRESS:
               inputExecutor.mousePress(InputEvent.getMaskForButton(x));

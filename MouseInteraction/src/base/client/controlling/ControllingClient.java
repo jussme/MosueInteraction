@@ -66,7 +66,7 @@ public class ControllingClient extends Client{
 			
 			BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageByteBuffer));
 			++counter;
-			System.out.println(System.currentTimeMillis() + ", count: " + counter + ", read: " + (System.currentTimeMillis() - time0));
+			//System.out.println(System.currentTimeMillis() + ", count: " + counter + ", read: " + (System.currentTimeMillis() - time0));
 			return img;
 		}
 		
@@ -139,7 +139,9 @@ public class ControllingClient extends Client{
 				  payload[3] = (byte) y;
           payload[4] = (byte) (y >> 8);
           datagramSocket.send(packet);
-					System.out.println(System.currentTimeMillis() + ", mouse movement");
+          System.out.println("controlling client sent to " + datagramSocket.getInetAddress() + ":" + datagramSocket.getPort());
+          System.out.println("controlling will be sending from: " + datagramSocket.getLocalAddress() + ":" + datagramSocket.getLocalPort());
+          //System.out.println(System.currentTimeMillis() + ", mouse movement");
 				}
 			} catch (IOException e) {
 				e.printStackTrace();

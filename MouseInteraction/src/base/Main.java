@@ -196,7 +196,7 @@ public class Main {
 	}
 	
 	private static String getHostnameOrIPInput() {
-		String hostname = JOptionPane.showInputDialog(null, "Server hostname or IP: ");
+		String hostname = JOptionPane.showInputDialog(null, "Server hostname or IP: ", "localhost");
 		if(!hostname.matches(VALID_HOSTNAME_REGEX) && !hostname.matches(VALID_IP_ADDRESS_REGEX)) {
 			notifyOfFormatError();
 			System.exit(1);

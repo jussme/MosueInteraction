@@ -42,7 +42,7 @@ class Mediator{
   }
 
   private void transferAllSockets() {
-    for(int it = 5; it > 2; --it) {
+    for(int it = ClientSocketType.getNOfTypes() - 1; it > ClientSocketType.getNOfTypes()/2 - 1; --it) {
       final int constBuff = it;
       new Thread(() -> {
         try {
@@ -54,6 +54,9 @@ class Mediator{
               DatagramPacket incomingPacket = new DatagramPacket(buf, buf.length);
               System.out.println(serverOutUDP.getRemoteSocketAddress());
               DatagramPacket outgoingPacket = new DatagramPacket(buf, buf.length, serverOutUDP.getRemoteSocketAddress());
+              System.out.println("Will be listening on: " + serverInUDP.getLocalAddress() + ":" + serverOutUDP.getLocalPort());
+              System.out.println("Will be sending to: " + serverOutUDP.getInetAddress() + ":" + serverOutUDP.getPort());
+              System.out.println("Will be sending from: " + serverInUDP.getInetAddress() + ":" + serverInUDP.getPort());
               while(true) {
                 serverInUDP.receive(incomingPacket);System.out.println("sent from " + incomingPacket.getPort() + " to " + outgoingPacket.getPort());
                 serverOutUDP.send(outgoingPacket);
