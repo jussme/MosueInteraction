@@ -43,31 +43,45 @@ class Mediator{
 
   private void transferAllSockets() {
     for(int it = ClientSocketType.getNOfTypes() - 1; it > ClientSocketType.getNOfTypes()/2 - 1; --it) {
-      final int constBuff = it;
-      new Thread(() -> {
-        try {
-          switch (ClientSocketType.valueOf(constBuff)) {
-            case OutputSocket:
-              DatagramSocket serverInUDP = (DatagramSocket) sockets[constBuff];
-              DatagramSocket serverOutUDP = (DatagramSocket) sockets[ClientSocketType.getNOfTypes() - 1 - constBuff];
-              byte[] buf = new byte[ControllingClient.InputSender.MAX_PAYLOAD_LENGTH];
-              DatagramPacket incomingPacket = new DatagramPacket(buf, buf.length);
-              DatagramPacket outgoingPacket = new DatagramPacket(buf, buf.length, serverOutUDP.getRemoteSocketAddress());
-              while(true) {
-                serverInUDP.receive(incomingPacket);
-                serverOutUDP.send(outgoingPacket);
-              }
-            default:
-              Socket serverInTCP = (Socket) sockets[constBuff];
-              Socket serverOutTCP = (Socket) sockets[ClientSocketType.getNOfTypes() - 1 - constBuff];
-              serverInTCP.getInputStream().transferTo(serverOutTCP.getOutputStream());
-              break;
-          }
-        } catch (IOException e) {
-          e.printStackTrace();
-          System.exit(1);
-        }
-      }).start();
+      switch (ClientSocketType.valueOf(it)) {
+      case OutputSocket:
+        DatagramSocket serverInUDP = (DatagramSocket) sockets[it];
+        DatagramSocket serverOutUDP = (DatagramSocket) sockets[ClientSocketType.getNOfTypes() - 1 - it];
+        beginTransferingUDPSocketPair(serverInUDP, serverOutUDP);
+      default:
+        Socket serverInTCP = (Socket) sockets[it];
+        Socket serverOutTCP = (Socket) sockets[ClientSocketType.getNOfTypes() - 1 - it];
+        beginTransferingTCPSocketPair(serverInTCP, serverOutTCP);
+        break;
+      }
     }
+  }
+  
+  private void beginTransferingUDPSocketPair(DatagramSocket in, DatagramSocket out) {
+    new Thread(() -> {
+      try {
+        byte[] buf = new byte[ControllingClient.InputSender.MAX_PAYLOAD_LENGTH];
+        DatagramPacket incomingPacket = new DatagramPacket(buf, buf.length);
+        DatagramPacket outgoingPacket = new DatagramPacket(buf, buf.length, out.getRemoteSocketAddress());
+        while(true) {
+          in.receive(incomingPacket);
+          out.send(outgoingPacket);
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+        System.exit(1);
+      }
+    }).start();
+  }
+  
+  private void beginTransferingTCPSocketPair(Socket in, Socket out) {
+    new Thread(() -> {
+      try{
+        in.getInputStream().transferTo(out.getOutputStream());
+      } catch (IOException e) {
+        e.printStackTrace();
+        System.exit(1);
+      }
+    }).start();
   }
 }
