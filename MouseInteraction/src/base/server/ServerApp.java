@@ -1,9 +1,8 @@
 package base.server;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -58,11 +57,16 @@ public class ServerApp{
       this.udpSocketRemotePort = udpSocketRemotePort;
     }
     static Credentials readCredentials(Socket socket) throws IOException{
-      var bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-      String password = bufferedReader.readLine();
-      ClientSocketType clientSocketType = ClientSocketType.valueOf(bufferedReader.read());
+      var inputStream = new BufferedInputStream(socket.getInputStream());
+      byte[] buff = new byte[inputStream.read()];
+      inputStream.read(buff);
+      
+      String password = new String(buff, base.Main.ENCODING);
+      
+      ClientSocketType clientSocketType = ClientSocketType.valueOf(inputStream.read());
+      
       if(clientSocketType.getCorrespondingClass() == DatagramSocket.class) {
-        int readPort = bufferedReader.read();System.out.println("Remote listening port number by bufferedReader.read() = " + readPort);
+        int readPort = inputStream.read() + (inputStream.read() << 8);System.out.println("Remote listening port number by bufferedReader.read() = " + readPort);
         return new Credentials(password, clientSocketType, readPort);
       }
       
@@ -110,6 +114,9 @@ public class ServerApp{
 	}
 	
 	private void notifyClientOfServerUDPPort(Socket socket, int port) throws IOException{
-	  new DataOutputStream(socket.getOutputStream()).writeChar(port);
+	  OutputStream outputStream = socket.getOutputStream();
+	  outputStream.write(port);
+	  outputStream.write((port >> 8));
+	  //new DataOutputStream(socket.getOutputStream()).writeChar(port);
 	}
 }
