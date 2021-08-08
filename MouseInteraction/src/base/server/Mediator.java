@@ -52,13 +52,9 @@ class Mediator{
               DatagramSocket serverOutUDP = (DatagramSocket) sockets[ClientSocketType.getNOfTypes() - 1 - constBuff];
               byte[] buf = new byte[ControllingClient.InputSender.MAX_PAYLOAD_LENGTH];
               DatagramPacket incomingPacket = new DatagramPacket(buf, buf.length);
-              System.out.println(serverOutUDP.getRemoteSocketAddress());
               DatagramPacket outgoingPacket = new DatagramPacket(buf, buf.length, serverOutUDP.getRemoteSocketAddress());
-              System.out.println("Will be listening on: " + serverInUDP.getLocalAddress() + ":" + serverOutUDP.getLocalPort());
-              System.out.println("Will be sending to: " + serverOutUDP.getInetAddress() + ":" + serverOutUDP.getPort());
-              System.out.println("Will be sending from: " + serverInUDP.getInetAddress() + ":" + serverInUDP.getPort());
               while(true) {
-                serverInUDP.receive(incomingPacket);System.out.println("sent from " + incomingPacket.getPort() + " to " + outgoingPacket.getPort());
+                serverInUDP.receive(incomingPacket);
                 serverOutUDP.send(outgoingPacket);
               }
             default:

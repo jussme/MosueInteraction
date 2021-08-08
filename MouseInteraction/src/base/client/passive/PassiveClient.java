@@ -55,9 +55,8 @@ public class PassiveClient extends Client{
 				System.exit(1);
 			}
 		}
-		int counter = 0;
+
 		void sendScreenShot(BufferedImage screenShot) throws IOException{
-			long time0 = System.currentTimeMillis();
 			var byteArrayOutputStream = new ByteArrayOutputStream();
 			ImageIO.write(screenShot, "jpg", byteArrayOutputStream);
 			byteArrayOutputStream.flush();
@@ -66,8 +65,6 @@ public class PassiveClient extends Client{
 			
 			outputStream.write(byteArrayOutputStream.toByteArray());
 			outputStream.flush();
-			++counter;
-			//System.out.println(System.currentTimeMillis() + ", count: " + counter + ", write: " + (System.currentTimeMillis() - time0));
 		}
 		
 		BufferedImage getScreenShot() {
@@ -102,20 +99,18 @@ public class PassiveClient extends Client{
 		}
 		
 		@Override
-		public void run() {
+		public void run() {int counter = 0;
 		  try {
         int x = 0, y = 0;
         InputType inputType;
         do {
-          System.out.println("Passive will be receiving from: " + datagramSocket.getInetAddress() + ":" + datagramSocket.getPort());
-          System.out.println("Passive will be listening on: " + datagramSocket.getLocalAddress() + ":" + datagramSocket.getLocalPort());
           datagramSocket.receive(packet);
           inputType = InputType.valueOf(payload[0]);
-          x = payload[1] + (((int)payload[2]) << 8);
+          x = Byte.toUnsignedInt(payload[1]) + (Byte.toUnsignedInt(payload[2]) << 8);
           switch(inputType) {
             case MOUSE_MOVEMENT:
-              y = payload[3] + (((int)payload[4]) << 8);
-              inputExecutor.mouseMove(x, y);
+              y = Byte.toUnsignedInt(payload[3]) + (Byte.toUnsignedInt(payload[4]) << 8);
+              inputExecutor.mouseMove(x, y);System.out.println("Counter: " + ++counter + ", " + x + ":" + y);
               //System.out.println(System.currentTimeMillis() + ", mouse movement: " + x + ";" + y);
               break;
             case MOUSE_PRESS:

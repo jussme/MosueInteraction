@@ -16,11 +16,11 @@ public class Client {
 	  var outputStream = new BufferedOutputStream(socket.getOutputStream());
 	  outputStream.write(datagramSocket.getLocalPort());
 	  outputStream.write(datagramSocket.getLocalPort() >> 8);
-	  outputStream.flush();System.out.println("datagramSocket.getLocalPort(): " + datagramSocket.getLocalPort());
+	  outputStream.flush();
 	  
 	  var inputStream = new BufferedInputStream(socket.getInputStream());
 	  int port = inputStream.read();
-	  port += inputStream.read() << 8;System.out.println("read remote udp port:" + port);
+	  port += inputStream.read() << 8;
 	  
 	  datagramSocket.connect(new InetSocketAddress(hostname, port));
 	  

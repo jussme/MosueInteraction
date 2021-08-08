@@ -88,8 +88,7 @@ public class ServerApp{
       case OutputSocket:
         loggedSocket = new DatagramSocket(); DatagramSocket ds = (DatagramSocket) loggedSocket;
         ds.connect(new InetSocketAddress(socket.getInetAddress(), credentials.udpSocketRemotePort));
-        System.out.println("SERVERAPP DIAGNOSE\n\tlogged-on udp socket on the server(local): " + ds.getLocalAddress() + ":" + ds.getLocalPort()
-          + "\n\t(remote): " + ds.getInetAddress() + ":" + ds.getPort() + "\n\treceived port: " + credentials.udpSocketRemotePort);
+        
         notifyClientOfServerUDPPort(socket, ds.getLocalPort());
       default:
         Mediator foundMediator;

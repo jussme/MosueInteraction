@@ -54,25 +54,24 @@ public class ControllingClient extends Client{
 			
 			this.start();
 		}
-		int counter = 0;
+		
 		BufferedImage receiveScreenShot() throws IOException{
 			byte[] sizeArray = new byte[4];
 			graphicsInputStream.read(sizeArray);
-			long time0 = System.currentTimeMillis();
+
 			int size = ByteBuffer.wrap(sizeArray).asIntBuffer().get();
 			
 			byte[] imageByteBuffer = new byte[size];
 			graphicsInputStream.readNBytes(imageByteBuffer, 0, size);
 			
 			BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageByteBuffer));
-			++counter;
-			//System.out.println(System.currentTimeMillis() + ", count: " + counter + ", read: " + (System.currentTimeMillis() - time0));
+
 			return img;
 		}
 		
 		void sleepUntillWindowInstantiated() {
 		  try{
-        while(controllingClientWindow == null) {
+        while(controllingClientWindow == null) {//will do
           Thread.sleep(5);
         };
       }catch(InterruptedException e) {
@@ -93,7 +92,7 @@ public class ControllingClient extends Client{
 			try {
 				do {
 					controllingClientWindow.drawImage(receiveScreenShot());
-					controllingClientWindow.showFPS(
+					controllingClientWindow.showFPS(//not readable
 						(int)(
 								(
 									1000f / (
@@ -129,7 +128,7 @@ public class ControllingClient extends Client{
 			this.payload = new byte[MAX_PAYLOAD_LENGTH];
 			this.packet = new DatagramPacket(payload, payload.length, outputSocket.getRemoteSocketAddress());
 		}
-		
+		int counter = 0;
 		private void sendMouseMovement(int x, int y) {
 			try {
 				synchronized(datagramSocket) {
@@ -137,10 +136,8 @@ public class ControllingClient extends Client{
 				  payload[1] = (byte) x;
 				  payload[2] = (byte) (x >> 8);
 				  payload[3] = (byte) y;
-          payload[4] = (byte) (y >> 8);
+          payload[4] = (byte) (y >> 8);System.out.println("Counter: " + ++counter + ", " + x + ":" + y);
           datagramSocket.send(packet);
-          System.out.println("controlling client sent to " + datagramSocket.getInetAddress() + ":" + datagramSocket.getPort());
-          System.out.println("controlling will be sending from: " + datagramSocket.getLocalAddress() + ":" + datagramSocket.getLocalPort());
           //System.out.println(System.currentTimeMillis() + ", mouse movement");
 				}
 			} catch (IOException e) {
