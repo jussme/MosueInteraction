@@ -28,7 +28,6 @@ public class ServerApp{
       try {
         @SuppressWarnings("resource")
         var serverSocket = new ServerSocket();
-        //serverSocket.setReceiveBufferSize(64000);
         serverSocket.bind(new InetSocketAddress(localPort));
         while(true){
           logClientSocket(serverSocket.accept());
@@ -116,6 +115,5 @@ public class ServerApp{
 	  OutputStream outputStream = socket.getOutputStream();
 	  outputStream.write(port);
 	  outputStream.write((port >> 8));
-	  //new DataOutputStream(socket.getOutputStream()).writeChar(port);
 	}
 }

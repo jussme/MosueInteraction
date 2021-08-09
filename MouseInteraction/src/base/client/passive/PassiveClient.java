@@ -48,7 +48,6 @@ public class PassiveClient extends Client{
 			try {
 				do {
 					sendScreenShot(getScreenShot());
-					//Thread.sleep(TOTAL_REFRESH_DELAY);
 				}while(true);
 			}catch(IOException e) {
 				e.printStackTrace();
@@ -81,8 +80,6 @@ public class PassiveClient extends Client{
 		
 		InputReceiver(DatagramSocket inputSocket) {
 			try {
-			  //inputSocket.setReceiveBufferSize(8);
-			  
 				this.datagramSocket = inputSocket;
 				this.inputExecutor = new Robot();
 				
@@ -99,7 +96,7 @@ public class PassiveClient extends Client{
 		}
 		
 		@Override
-		public void run() {int counter = 0;
+		public void run() {
 		  try {
         int x = 0, y = 0;
         InputType inputType;
@@ -110,8 +107,7 @@ public class PassiveClient extends Client{
           switch(inputType) {
             case MOUSE_MOVEMENT:
               y = Byte.toUnsignedInt(payload[3]) + (Byte.toUnsignedInt(payload[4]) << 8);
-              inputExecutor.mouseMove(x, y);System.out.println("Counter: " + ++counter + ", " + x + ":" + y);
-              //System.out.println(System.currentTimeMillis() + ", mouse movement: " + x + ";" + y);
+              inputExecutor.mouseMove(x, y);
               break;
             case MOUSE_PRESS:
               inputExecutor.mousePress(InputEvent.getMaskForButton(x));

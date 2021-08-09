@@ -121,14 +121,12 @@ public class ControllingClient extends Client{
 		private byte[] payload;
 		
 		private InputSender(DatagramSocket outputSocket) throws IOException{
-		  //outputSocket.setSendBufferSize(8);
-		  
 			this.datagramSocket = outputSocket;
 			
 			this.payload = new byte[MAX_PAYLOAD_LENGTH];
 			this.packet = new DatagramPacket(payload, payload.length, outputSocket.getRemoteSocketAddress());
 		}
-		int counter = 0;
+		
 		private void sendMouseMovement(int x, int y) {
 			try {
 				synchronized(datagramSocket) {
@@ -136,9 +134,8 @@ public class ControllingClient extends Client{
 				  payload[1] = (byte) x;
 				  payload[2] = (byte) (x >> 8);
 				  payload[3] = (byte) y;
-          payload[4] = (byte) (y >> 8);System.out.println("Counter: " + ++counter + ", " + x + ":" + y);
+          payload[4] = (byte) (y >> 8);
           datagramSocket.send(packet);
-          //System.out.println(System.currentTimeMillis() + ", mouse movement");
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
