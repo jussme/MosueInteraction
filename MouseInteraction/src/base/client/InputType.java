@@ -6,7 +6,7 @@ public enum InputType {
 	KEYBOARD_PRESS(2),
 	MOUSE_RELEASE(3),
 	KEYBOARD_RELEASE(4),
-	OTHER(3);
+	OTHER(5);
 	
 	private int intType;
 	
